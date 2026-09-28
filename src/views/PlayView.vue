@@ -64,6 +64,18 @@ const keyRoots = computed<Record<string, string[]>>(() => {
   return out
 })
 
+/** 键盘旁注释：字根关只显示本关键位，其他关显示全部 */
+const rootNotes = computed<{ root: string; note: string }[]>(() => {
+  const pool = level.value?.pool ?? []
+  const poolSet = new Set(pool)
+  const list: { root: string; note: string }[] = []
+  for (const item of Object.values(zigenMap.value)) {
+    if (poolSet.size > 0 && !poolSet.has(item.key)) continue
+    for (const n of item.notes ?? []) list.push(n)
+  }
+  return list
+})
+
 // ---------- 通用状态 ----------
 const now = ref(Date.now())
 const started = ref(false)
@@ -559,6 +571,12 @@ onUnmounted(() => {
         :short1="LEVEL1_CHARS"
         :disabled="finished"
       />
+      <p v-if="rootNotes.length > 0" class="root-notes">
+        <span class="root-notes__label">字根说明：</span>
+        <span v-for="(n, i) in rootNotes" :key="i" class="root-notes__item">
+          <b>{{ n.root }}</b> {{ n.note }}
+        </span>
+      </p>
     </div>
 
     <ResultModal
@@ -651,5 +669,26 @@ onUnmounted(() => {
 .volume__range:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 键盘旁字根注释 */
+.root-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin-top: var(--space-3);
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+}
+
+.root-notes__label {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.root-notes__item b {
+  color: var(--color-text);
+  font-weight: 600;
 }
 </style>

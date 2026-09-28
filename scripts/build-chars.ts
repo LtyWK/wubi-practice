@@ -136,13 +136,14 @@ function pickCode(codes: Map<string, number> | undefined, fallback: string): str
   return fallback
 }
 
-/** 字根表配置（键名/口诀/分区，字根列表由拆解数据推导） */
+/** 字根表配置（权威字根表：键名/口诀/分区/字根列表/注释，人工定稿） */
 interface ZigenConfig {
   key: string
   name: string
   area: string
   mnemonic: string
   radicals: string[]
+  notes?: { root: string; note: string }[]
 }
 
 function main(): void {
@@ -151,9 +152,8 @@ function main(): void {
   const level1 = parseLevel1()
   const rootsMap = parseRootsMap()
 
-  // 统计 PUA → 键位分布：先投票确定每个字根的主键位，避免个别错位字污染
+  // 统计 PUA → 键位分布（多数投票确定主键位），用于一致性校验
   const puaKeyFreq = new Map<string, Map<string, number>>()
-  const puaTotal = new Map<string, number>()
 
   const all = new Set<string>([...dict.keys(), ...data.keys()])
   const entries: Record<string, CharEntry> = {}
@@ -190,7 +190,6 @@ function main(): void {
           puaKeyFreq.set(pua, keys)
         }
         keys.set(key, (keys.get(key) ?? 0) + 1)
-        puaTotal.set(pua, (puaTotal.get(pua) ?? 0) + 1)
       }
     }
 
@@ -209,28 +208,29 @@ function main(): void {
   mkdirSync(OUT_DIR, { recursive: true })
   writeFileSync(resolve(OUT_DIR, 'chars.json'), JSON.stringify(entries), 'utf8')
   writeFileSync(resolve(OUT_DIR, 'chars.freq1.json'), JSON.stringify(freq1), 'utf8')
-  // 字根表：键名/口诀/分区取自配置，字根列表由拆解数据生成（去重 + 按频次降序）
+  // 字根表：直接采用权威配置（scripts/sources/zigen.json，人工定稿）
   const zigenConfig = JSON.parse(
     readFileSync(resolve(SOURCES, 'zigen.json'), 'utf8'),
   ) as ZigenConfig[]
-  const keyRootFreq = new Map<string, Map<string, number>>()
+  writeFileSync(resolve(OUT_DIR, 'zigen.json'), JSON.stringify(zigenConfig), 'utf8')
+
+  // 一致性校验：拆解数据里 PUA 映射出的字根名，是否在对应键位的标准字根表内
+  const standardByKey = new Map<string, Set<string>>()
+  for (const item of zigenConfig) standardByKey.set(item.key, new Set(item.radicals))
+  const mismatches = new Set<string>()
   for (const [pua, keys] of puaKeyFreq) {
     const mainKey = [...keys.entries()].sort((a, b) => b[1] - a[1])[0][0]
-    const root = rootsMap.get(pua) ?? KEY_ROOT[mainKey] ?? mainKey
-    let freq = keyRootFreq.get(mainKey)
-    if (!freq) {
-      freq = new Map()
-      keyRootFreq.set(mainKey, freq)
+    const name = rootsMap.get(pua) ?? KEY_ROOT[mainKey] ?? mainKey
+    if (!standardByKey.get(mainKey)?.has(name)) {
+      mismatches.add(`${mainKey.toUpperCase()}:${name}`)
     }
-    freq.set(root, (freq.get(root) ?? 0) + (puaTotal.get(pua) ?? 0))
   }
-  const zigenOut = zigenConfig.map((item) => {
-    const freq = keyRootFreq.get(item.key)
-    if (!freq) return item
-    const roots = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([root]) => root)
-    return { ...item, radicals: roots }
-  })
-  writeFileSync(resolve(OUT_DIR, 'zigen.json'), JSON.stringify(zigenOut), 'utf8')
+  if (mismatches.size > 0) {
+    console.log(
+      `[build-chars] 拆解映射与标准表不一致 ${mismatches.size} 处（供人工核对，不影响字根表）：`,
+    )
+    console.log('  ' + [...mismatches].join('  '))
+  }
   // 文章库（R4.1 生成；缺失时输出空数组占位）
   const articlesPath = resolve(SOURCES, 'articles.json')
   writeFileSync(

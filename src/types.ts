@@ -70,6 +70,8 @@ export interface ZigenItem {
   mnemonic: string
   /** 该键位字根列表 */
   radicals: string[]
+  /** 需要注释说明的字根（字形无法用字符精确表达等） */
+  notes?: { root: string; note: string }[]
 }
 
 /** 进度数据 */

@@ -22,6 +22,7 @@ interface ZigenItem {
   key: string
   name: string
   radicals: string[]
+  notes?: { root: string; note: string }[]
 }
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -108,6 +109,17 @@ function main(): void {
   console.log(`③ 一级简码 25 字：${level1Ok ? '通过' : '不一致'}`)
   if (!level1Ok) console.log('   实际：', JSON.stringify(found))
 
+  // 校验④ 字根表完整性：25 键，每键 2-14 个字根（K 键仅「口川」2 个）
+  const zigenIssues: string[] = []
+  if (zigen.length !== 25) zigenIssues.push(`键位数 ${zigen.length}（要求 25）`)
+  for (const z of zigen) {
+    if (z.radicals.length < 2 || z.radicals.length > 14) {
+      zigenIssues.push(`${z.key}:${z.radicals.length}`)
+    }
+  }
+  const zigenOk = zigenIssues.length === 0
+  console.log(`④ 字根表完整性：${zigenOk ? '通过' : `异常（${zigenIssues.join(' ')}）`}`)
+
   // 校验④ 抽 50 个一级常用字
   const freq1Chars = Object.keys(chars).filter((ch) => chars[ch].freq === 1)
   const sample: string[] = []
@@ -122,7 +134,8 @@ function main(): void {
       .join('  |  '),
   )
 
-  const ok = total >= 7000 && freq1 === 3500 && failPrefix === 0 && failRoot === 0 && level1Ok
+  const ok =
+    total >= 7000 && freq1 === 3500 && failPrefix === 0 && failRoot === 0 && level1Ok && zigenOk
   if (!ok) {
     console.error('\n数据校验未通过')
     process.exit(1)
