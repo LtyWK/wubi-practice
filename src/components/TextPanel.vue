@@ -80,23 +80,30 @@ watch(
 }
 
 .text-panel__head {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: var(--space-3);
+  min-height: 30px;
   margin-bottom: var(--space-2);
 }
 
 .text-panel__title {
-  color: var(--color-text-muted);
-  font-size: var(--font-sm);
+  color: var(--color-text);
+  font-size: var(--font-base);
+  font-weight: 600;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 70%;
 }
 
 .text-panel__align {
-  flex: none;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -123,16 +130,16 @@ watch(
 }
 
 .text-panel__box {
-  max-height: 36vh;
-  min-height: 120px;
+  max-height: 24vh;
+  min-height: 84px;
   overflow-y: auto;
   scrollbar-width: thin;
 }
 
 .text-panel__text {
   font-size: 1.375rem;
-  line-height: 2.6;
-  letter-spacing: 0.1em;
+  line-height: 2.8;
+  letter-spacing: 0.15em;
   word-break: break-all;
 }
 

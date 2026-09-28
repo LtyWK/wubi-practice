@@ -8,6 +8,7 @@ import TextPanel from '@/components/TextPanel.vue'
 import VirtualKeyboard from '@/components/VirtualKeyboard.vue'
 import { loadArticles, loadZigen } from '@/data/loader'
 import { buildPool, isHan, sample } from '@/data/pool'
+import { LEVEL1_CHARS } from '@/data/short1'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
@@ -173,10 +174,16 @@ const textItems = computed(() => {
   return danziItems.value
 })
 
+/** 标题：大关（阶段）· 小关 */
 const panelTitle = computed(() => {
-  if (mode.value === 'zigen') return level.value?.title ?? '字根练习'
-  if (articleMode.value) return articleTitle.value || '自由练习'
-  return level.value?.title ?? ''
+  const lv = level.value
+  const stage = lv ? stageOfLevel(lv.id) : undefined
+  if (articleMode.value) {
+    const base = articleTitle.value || '自由练习'
+    return stage ? `${stage.title} · ${base}` : base
+  }
+  if (!lv) return ''
+  return stage ? `${stage.title} · ${lv.title}` : lv.title
 })
 
 // ---------- 下一步按键 ----------
@@ -498,6 +505,7 @@ onUnmounted(() => {
       :feedback="feedback"
       :sticky="sticky"
       :roots="keyRoots"
+      :short1="LEVEL1_CHARS"
       :disabled="finished"
     />
 

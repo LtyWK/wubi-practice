@@ -11,10 +11,12 @@ const props = withDefaults(
     sticky?: KeyFeedback | null
     /** 键位 → 全部字根（含键名字根，键名在最前） */
     roots?: Record<string, string[]>
+    /** 键位 → 一级简码单字 */
+    short1?: Record<string, string>
     /** 禁用态 */
     disabled?: boolean
   }>(),
-  { highlight: '', feedback: null, sticky: null, roots: undefined, disabled: false },
+  { highlight: '', feedback: null, sticky: null, roots: undefined, short1: undefined, disabled: false },
 )
 
 /** QWERTY 三行（配合真实键盘） */
@@ -54,6 +56,7 @@ function keyClass(key: string): Record<string, boolean> {
   <div class="vk" :class="{ 'vk--disabled': props.disabled }" aria-hidden="true">
     <div v-for="(row, ri) in ROWS" :key="ri" class="vk__row">
       <span v-for="key in row" :key="key" class="vk__key" :class="keyClass(key)">
+        <span v-if="props.short1?.[key]" class="vk__short">{{ props.short1[key] }}</span>
         <span class="vk__letter">{{ key.toUpperCase() }}</span>
         <span class="vk__roots">
           <span v-for="(root, i) in props.roots?.[key] ?? []" :key="i" class="vk__root">
@@ -136,6 +139,24 @@ function keyClass(key: string): Record<string, boolean> {
 }
 .vk__key--area-5::before {
   background: #b1b0c9;
+}
+
+.vk__short {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-primary);
+}
+
+.vk__key--sticky-ok .vk__short {
+  color: #3f7a58;
+}
+
+.vk__key--sticky-bad .vk__short {
+  color: #a05555;
 }
 
 .vk__letter {
