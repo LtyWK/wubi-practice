@@ -16,7 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "data:build": "tsx scripts/build-chars.ts",
-    "data:verify": "tsx scripts/verify-data.ts",
+    "data:verify": "tsx scripts/verify-data.ts && tsx scripts/verify-articles.ts",
     "format": "prettier --write ."
   },
   "dependencies": {
