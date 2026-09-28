@@ -2,21 +2,9 @@
 import { computed, ref } from 'vue'
 import { useSave } from '@/composables/useSave'
 import { useLevels } from '@/composables/useLevels'
-import { useUiSettings, type ThemeMode } from '@/composables/useUiSettings'
 
 const { save, exportSave, importSave, resetAll } = useSave()
 const { unlockAll } = useLevels()
-const { theme, soundOn, setTheme, setSound } = useUiSettings()
-
-const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
-  { value: 'auto', label: '跟随系统' },
-  { value: 'light', label: '浅色' },
-  { value: 'dark', label: '深色' },
-]
-
-function onSoundChange(e: Event): void {
-  setSound((e.target as HTMLInputElement).checked)
-}
 
 const message = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -91,31 +79,6 @@ function doReset(): void {
     </section>
 
     <section class="card">
-      <h2 class="card__title">外观与音效</h2>
-      <div class="row">
-        <span class="row__label">主题</span>
-        <span class="theme">
-          <button
-            v-for="opt in THEME_OPTIONS"
-            :key="opt.value"
-            class="theme__btn"
-            :class="{ 'theme__btn--active': theme === opt.value }"
-            @click="setTheme(opt.value)"
-          >
-            {{ opt.label }}
-          </button>
-        </span>
-      </div>
-      <div class="row">
-        <span class="row__label">按键音效</span>
-        <label class="check">
-          <input type="checkbox" :checked="soundOn" @change="onSoundChange" />
-          开启（小音量，错误提示更明显）
-        </label>
-      </div>
-    </section>
-
-    <section class="card">
       <h2 class="card__title">导出</h2>
       <p class="card__desc">导出为 JSON 文件，可在其他浏览器或设备导入。</p>
       <button class="btn btn--primary" @click="doExport">导出存档</button>
@@ -169,51 +132,7 @@ function doReset(): void {
   border-color: var(--color-danger-border);
 }
 
-.row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-2) 0;
-}
 
-.row__label {
-  flex: none;
-  width: 5em;
-  color: var(--color-text-muted);
-  font-size: var(--font-sm);
-}
-
-.theme {
-  display: inline-flex;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.theme__btn {
-  padding: var(--space-1) var(--space-3);
-  border: none;
-  background: var(--color-surface);
-  color: var(--color-text-muted);
-}
-
-.theme__btn + .theme__btn {
-  border-left: 1px solid var(--color-border);
-}
-
-.theme__btn--active {
-  background: var(--color-primary-weak);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.check {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--font-sm);
-  color: var(--color-text);
-}
 
 .card__title {
   font-size: var(--font-md);
@@ -244,13 +163,13 @@ function doReset(): void {
 .btn--primary {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .btn--danger {
   background: var(--color-danger);
   border-color: var(--color-danger);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .hidden {
