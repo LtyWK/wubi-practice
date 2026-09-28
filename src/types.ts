@@ -8,25 +8,54 @@ export interface CharEntry {
   radicals: [string, string][]
   /** 1 = 通用规范一级 3500 字 */
   freq: 0 | 1
+  /** 是否含识别码（V2，用于识别码专题关） */
+  idcode?: boolean
 }
 
-/** 关卡配置（src/data/levels.ts 静态定义） */
+/** 关卡配置（src/data/stages.ts 静态定义） */
 export interface LevelConfig {
-  /** 如 "zigen-heng" */
+  /** 如 "s1-zigen-heng" */
   id: string
-  type: 'zigen' | 'danzi'
+  type: 'zigen' | 'danzi' | 'article'
   /** 如 "横区字根（G F D S A）" */
   title: string
-  /** zigen：键位列表；danzi：忽略 */
+  /** zigen：键位列表；danzi/article：忽略 */
   pool: string[]
   /** danzi 出题池 */
-  source?: 'short1' | 'short2' | 'freq1'
+  source?: 'short1' | 'short2' | 'freq1' | 'idcode'
   /** danzi 出题首码过滤（可选，用于按区分关） */
   starts?: string[]
-  /** 出题数量 */
+  /** article：篇目 id 列表 */
+  articleIds?: string[]
+  /** 出题数量（article 为参考字数） */
   length: number
+  /** 每键/每字超时（毫秒），超时仅提醒并计数 */
+  timeoutMs: number
+  /** 每批显示数量（默认 20） */
+  batchSize?: number
   /** 达标要求 */
   require: { speed: number; accuracy: number }
+}
+
+/** 阶段配置（大关卡） */
+export interface StageConfig {
+  id: string
+  title: string
+  description: string
+  levels: LevelConfig[]
+}
+
+/** 文章（V2，含公版出处） */
+export interface Article {
+  id: string
+  title: string
+  author: string
+  /** 出处说明（公版来源） */
+  source: string
+  /** 难度 1-4 */
+  difficulty: 1 | 2 | 3 | 4
+  /** 段落列表（已清洗标点） */
+  paragraphs: string[]
 }
 
 /** 字根表条目（scripts/sources/zigen.json） */

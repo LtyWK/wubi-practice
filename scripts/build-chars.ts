@@ -20,6 +20,7 @@ interface CharEntry {
   short: string[]
   radicals: [string, string][]
   freq: 0 | 1
+  idcode: boolean
 }
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -70,6 +71,8 @@ function parseDict(): Map<string, Map<string, number>> {
 interface DataRow {
   code: string
   puas: string[]
+  /** 是否含识别码（flag 列非空） */
+  idcode: boolean
 }
 
 /** 解析 search-wubi 拆解数据，返回 字 → { 全码, PUA 序列 } */
@@ -89,7 +92,8 @@ function parseData(): Map<string, DataRow> {
       const v = c.codePointAt(0) ?? 0
       if (v >= 0xe000 && v <= 0xf8ff) puas.push(v.toString(16).toUpperCase())
     }
-    result.set(ch, { code, puas })
+    const idcode = (cols[8] || '').trim().length > 0
+    result.set(ch, { code, puas, idcode })
   }
   return result
 }
@@ -170,7 +174,13 @@ function main(): void {
     }
 
     const isFreq1 = level1.has(ch)
-    const entry: CharEntry = { code, short, radicals, freq: isFreq1 ? 1 : 0 }
+    const entry: CharEntry = {
+      code,
+      short,
+      radicals,
+      freq: isFreq1 ? 1 : 0,
+      idcode: d?.idcode ?? false,
+    }
     entries[ch] = entry
     if (isFreq1) freq1[ch] = entry
   }

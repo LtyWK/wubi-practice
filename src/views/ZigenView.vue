@@ -3,16 +3,16 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import KeyboardMap from '@/components/KeyboardMap.vue'
 import ResultModal from '@/components/ResultModal.vue'
-import { LEVELS, getLevel } from '@/data/levels'
+import { findLevel, stageOfLevel } from '@/data/stages'
 import { calcKeyStats } from '@/engine/stats'
-import { useProgress } from '@/composables/useProgress'
+import { useLevels } from '@/composables/useLevels'
 import type { MistakeOption } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
-const { isUnlocked, unlock, recordBest } = useProgress()
+const { isStageUnlocked, recordResult } = useLevels()
 
-const level = computed(() => getLevel(String(route.params.id)))
+const level = computed(() => findLevel(String(route.params.id)))
 
 const queue = ref<string[]>([])
 const index = ref(0)
@@ -83,10 +83,8 @@ function finish(): void {
   now.value = Date.now()
   showResult.value = true
   const lv = level.value
-  if (lv && passed.value) {
-    recordBest(lv.id, stats.value.speed, stats.value.accuracy)
-    const i = LEVELS.findIndex((l) => l.id === lv.id)
-    if (i >= 0 && i < LEVELS.length - 1) unlock(LEVELS[i + 1].id)
+  if (lv) {
+    recordResult(lv.id, stats.value.speed, stats.value.accuracy, passed.value, 0)
   }
 }
 
@@ -125,7 +123,8 @@ function closeResult(): void {
 
 onMounted(() => {
   const lv = level.value
-  if (!lv || lv.type !== 'zigen' || !isUnlocked(lv.id)) {
+  const stageId = lv ? (stageOfLevel(lv.id)?.id ?? '') : ''
+  if (!lv || lv.type !== 'zigen' || !isStageUnlocked(stageId)) {
     router.replace('/')
     return
   }

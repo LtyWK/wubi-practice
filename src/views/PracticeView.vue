@@ -5,21 +5,21 @@ import CharLine from '@/components/CharLine.vue'
 import CodeHint from '@/components/CodeHint.vue'
 import KeyboardMap from '@/components/KeyboardMap.vue'
 import ResultModal from '@/components/ResultModal.vue'
-import { LEVELS, getLevel } from '@/data/levels'
+import { findLevel, stageOfLevel } from '@/data/stages'
 import { loadAllChars, loadFreq1Chars } from '@/data/loader'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
 import { calcStats } from '@/engine/stats'
 import { ensureWubi86, wubi86 } from '@/schemes/wubi86'
 import { useMistakes } from '@/composables/useMistakes'
-import { useProgress } from '@/composables/useProgress'
+import { useLevels } from '@/composables/useLevels'
 import type { CharEntry, LevelConfig, MistakeOption } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
-const { isUnlocked, unlock, recordBest } = useProgress()
+const { isStageUnlocked, recordResult } = useLevels()
 const { record, markMastered } = useMistakes()
 
-const level = computed(() => getLevel(String(route.params.id)))
+const level = computed(() => findLevel(String(route.params.id)))
 
 const session = ref<PracticeSession | null>(null)
 const now = ref(Date.now())
@@ -101,6 +101,9 @@ async function buildPool(lv: LevelConfig): Promise<string[]> {
   }
   const freq = await loadFreq1Chars()
   let pool = Object.keys(freq)
+  if (lv.source === 'idcode') {
+    pool = pool.filter((c) => freq[c].idcode)
+  }
   if (lv.starts) {
     const set = new Set(lv.starts)
     pool = pool.filter((c) => set.has(freq[c].code[0]))
@@ -122,10 +125,8 @@ function finish(): void {
   now.value = Date.now()
   showResult.value = true
   const lv = level.value
-  if (lv && passed.value) {
-    recordBest(lv.id, stats.value.speed, stats.value.accuracy)
-    const i = LEVELS.findIndex((l) => l.id === lv.id)
-    if (i >= 0 && i < LEVELS.length - 1) unlock(LEVELS[i + 1].id)
+  if (lv) {
+    recordResult(lv.id, stats.value.speed, stats.value.accuracy, passed.value, 0)
   }
 }
 
@@ -184,7 +185,8 @@ function closeResult(): void {
 
 onMounted(async () => {
   const lv = level.value
-  if (!lv || lv.type !== 'danzi' || !isUnlocked(lv.id)) {
+  const stageId = lv ? (stageOfLevel(lv.id)?.id ?? '') : ''
+  if (!lv || lv.type !== 'danzi' || !isStageUnlocked(stageId)) {
     router.replace('/')
     return
   }
