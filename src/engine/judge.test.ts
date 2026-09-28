@@ -1,0 +1,112 @@
+import { describe, expect, it } from 'vitest'
+import type { InputScheme } from '@/schemes/base'
+import { createSession, feedKey, type EngineEvent, type PracticeSession } from './judge'
+
+const CODES: Record<string, string> = { 好: 'vb', 中: 'khk', 是: 'jghu', 我: 'trnt' }
+const SHORTS: Record<string, string[]> = {
+  好: ['v', 'vb'],
+  中: ['k', 'kh'],
+  是: ['j', 'jgh'],
+}
+
+const scheme: InputScheme = {
+  id: 'wubi86',
+  code: (char: string): string | null => CODES[char] ?? null,
+  shorts: (char: string): string[] => SHORTS[char] ?? [],
+  hint: () => [],
+}
+
+function feed(
+  session: PracticeSession,
+  keys: string[],
+): { session: PracticeSession; events: EngineEvent[] } {
+  let current = session
+  const events: EngineEvent[] = []
+  for (const key of keys) {
+    const result = feedKey(current, key)
+    current = result.session
+    events.push(...result.events)
+  }
+  return { session: current, events }
+}
+
+describe('createSession', () => {
+  it('跳过未收录字，首字置为 active', () => {
+    const session = createSession(['好', '〇', '中'], scheme, 0)
+    expect(session.items.map((i) => i.char)).toEqual(['好', '中'])
+    expect(session.items[0].state).toBe('active')
+    expect(session.items[1].state).toBe('pending')
+    expect(session.finished).toBe(false)
+  })
+})
+
+describe('feedKey 判定规则', () => {
+  it('全码输满自动完成', () => {
+    const { session, events } = feed(createSession(['好'], scheme, 0), ['v', 'b'])
+    expect(session.finished).toBe(true)
+    expect(session.correctChars).toBe(1)
+    expect(events.map((e) => e.type)).toEqual([
+      'key-accept',
+      'key-accept',
+      'char-done',
+      'session-done',
+    ])
+  })
+
+  it('一级简码 + 空格上屏', () => {
+    const { session, events } = feed(createSession(['中'], scheme, 0), ['k', ' '])
+    expect(session.finished).toBe(true)
+    expect(events.map((e) => e.type)).toEqual(['key-accept', 'char-done', 'session-done'])
+  })
+
+  it('二级简码 + 空格上屏', () => {
+    const { session } = feed(createSession(['中'], scheme, 0), ['k', 'h', ' '])
+    expect(session.finished).toBe(true)
+    expect(session.correctKeys).toBe(2)
+  })
+
+  it('错键拒绝且已接受输入保留', () => {
+    const { session, events } = feed(createSession(['好'], scheme, 0), ['v', 'x'])
+    expect(session.input).toBe('v')
+    expect(session.totalKeys).toBe(2)
+    expect(session.correctKeys).toBe(1)
+    expect(events.map((e) => e.type)).toEqual(['key-accept', 'key-reject', 'char-error'])
+  })
+
+  it('错误事件携带 expect/actual', () => {
+    const { events } = feed(createSession(['好'], scheme, 0), ['v', 'x'])
+    const error = events.find((e) => e.type === 'char-error')
+    expect(error).toMatchObject({ type: 'char-error', char: '好', expect: 'vb', actual: 'vx' })
+  })
+
+  it('空格误按记为错键', () => {
+    const { session, events } = feed(createSession(['好'], scheme, 0), [' '])
+    expect(session.totalKeys).toBe(1)
+    expect(session.correctKeys).toBe(0)
+    expect(events.map((e) => e.type)).toEqual(['key-reject', 'char-error'])
+    expect(session.items[0].wrongAttempts).toEqual([' '])
+  })
+
+  it('多字连续推进', () => {
+    const { session } = feed(createSession(['中', '好'], scheme, 0), ['k', ' '])
+    expect(session.cursor).toBe(1)
+    expect(session.items[0].state).toBe('done')
+    expect(session.items[1].state).toBe('active')
+    expect(session.finished).toBe(false)
+  })
+
+  it('末字完成触发 session-done', () => {
+    const { session, events } = feed(createSession(['好'], scheme, 0), ['v', 'b'])
+    expect(session.finished).toBe(true)
+    expect(events.some((e) => e.type === 'session-done')).toBe(true)
+  })
+
+  it('非字母键一律忽略', () => {
+    const base = createSession(['好'], scheme, 0)
+    for (const key of ['1', 'V', 'Backspace', 'Enter']) {
+      const result = feedKey(base, key)
+      expect(result.events).toEqual([])
+      expect(result.session).toBe(base)
+    }
+  })
+})
