@@ -1,44 +1,25 @@
-import { ref } from 'vue'
+import { computed, type ComputedRef } from 'vue'
 import type { MistakeBook } from '@/types'
-
-/** localStorage 键名 */
-const KEY = 'wubi.v1.mistakes'
+import { flushSave, touchSave, useSave } from './useSave'
 
 /** 错题本条目 */
 export type MistakeEntry = MistakeBook[string]
 
-function loadMistakes(): MistakeBook {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (raw) return JSON.parse(raw) as MistakeBook
-  } catch {
-    // 忽略损坏或不可用的本地数据
-  }
-  return {}
-}
-
-/** 模块级共享状态（跨视图） */
-const book = ref<MistakeBook>(loadMistakes())
-
-function persist(): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(book.value))
-  } catch {
-    // 忽略写入失败
-  }
-}
-
-/** 错题本：记录、查询、标记掌握 */
+/** 错题本：记录、查询、标记掌握（数据存于统一存档 mistakes 字段） */
 export function useMistakes(): {
-  book: typeof book
+  book: ComputedRef<MistakeBook>
   record: (char: string, code: string, actual: string) => void
   markMastered: (char: string) => void
   pending: () => [string, MistakeEntry][]
   clear: (char: string) => void
   reset: () => void
 } {
+  const { save } = useSave()
+
+  const book = computed(() => save.value.mistakes)
+
   function record(char: string, code: string, actual: string): void {
-    const entry: MistakeEntry = book.value[char] ?? {
+    const entry: MistakeEntry = save.value.mistakes[char] ?? {
       code,
       count: 0,
       lastWrongInputs: [],
@@ -50,33 +31,33 @@ export function useMistakes(): {
     entry.lastWrongInputs = [actual, ...entry.lastWrongInputs].slice(0, 5)
     entry.lastAt = Date.now()
     entry.mastered = false
-    book.value[char] = entry
-    persist()
+    save.value.mistakes[char] = entry
+    touchSave()
   }
 
   function markMastered(char: string): void {
-    const entry = book.value[char]
+    const entry = save.value.mistakes[char]
     if (entry && !entry.mastered) {
       entry.mastered = true
-      persist()
+      touchSave()
     }
   }
 
   /** 未掌握（默认出现）的错题列表 */
   function pending(): [string, MistakeEntry][] {
-    return Object.entries(book.value).filter(([, entry]) => !entry.mastered)
+    return Object.entries(save.value.mistakes).filter(([, entry]) => !entry.mastered)
   }
 
   function clear(char: string): void {
-    if (book.value[char]) {
-      delete book.value[char]
-      persist()
+    if (save.value.mistakes[char]) {
+      delete save.value.mistakes[char]
+      touchSave()
     }
   }
 
   function reset(): void {
-    book.value = {}
-    persist()
+    save.value.mistakes = {}
+    flushSave()
   }
 
   return { book, record, markMastered, pending, clear, reset }

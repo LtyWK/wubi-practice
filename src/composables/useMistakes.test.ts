@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useMistakes } from './useMistakes'
+import { flushSave } from './useSave'
 
 const { record, markMastered, pending, reset, book } = useMistakes()
 
@@ -37,11 +38,12 @@ describe('useMistakes', () => {
     expect(book.value['好'].mastered).toBe(false)
   })
 
-  it('持久化到 localStorage', () => {
+  it('持久化到 localStorage（统一存档 mistakes 字段）', () => {
     record('好', 'vb', 'vx')
-    const raw = localStorage.getItem('wubi.v1.mistakes')
+    flushSave()
+    const raw = localStorage.getItem('wubi.v2.save')
     expect(raw).toBeTruthy()
-    const data = JSON.parse(raw ?? '{}') as Record<string, unknown>
-    expect(data['好']).toBeTruthy()
+    const data = JSON.parse(raw ?? '{}') as { mistakes?: Record<string, unknown> }
+    expect(data.mistakes?.['好']).toBeTruthy()
   })
 })

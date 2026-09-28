@@ -71,3 +71,43 @@ export type MistakeBook = Record<
     mastered: boolean
   }
 >
+
+/** 单字统计（V2） */
+export interface CharStat {
+  /** 完成次数 */
+  attempts: number
+  /** 累计错误击键 */
+  errors: number
+  /** 累计输入耗时（毫秒） */
+  totalMs: number
+  /** 最近一次记录时间 */
+  lastAt: number
+}
+
+/** 关卡成绩（V2） */
+export interface LevelResult {
+  /** 是否达标 */
+  passed: boolean
+  bestSpeed: number
+  bestAccuracy: number
+  /** 尝试次数 */
+  attempts: number
+  /** 超时次数 */
+  timeouts: number
+  /** 最近一次时间戳 */
+  at: number
+}
+
+/** V2 存档结构（localStorage 单键存储） */
+export interface SaveV2 {
+  version: 2
+  exportedAt: number
+  progress: {
+    /** 已解锁阶段 id */
+    unlockedStages: string[]
+    /** 关卡成绩 */
+    levels: Record<string, LevelResult>
+  }
+  mistakes: MistakeBook
+  stats: Record<string, CharStat>
+}
