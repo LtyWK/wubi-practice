@@ -35,7 +35,7 @@ describe('PlayView 字根模式', () => {
     await nextTick()
 
     expect(wrapper.find('.tp-char--done-clean').exists()).toBe(true)
-    expect(wrapper.find('.stats').text()).toContain('1/40')
+    expect(wrapper.find('.stats').text()).toContain('1/200')
   })
 
   it('按错键提示错误，完成后该字标记红色', async () => {

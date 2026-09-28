@@ -42,11 +42,11 @@ const isZigen = computed(() => level.value?.type === 'zigen')
 const mode = computed<'zigen' | 'text'>(() => (isZigen.value ? 'zigen' : 'text'))
 const articleMode = computed(() => level.value?.type === 'article' || isFree.value)
 
-/** 键盘按键上显示的字根（取每键前 3 个） */
-const keyRoots = computed<Record<string, string>>(() => {
-  const out: Record<string, string> = {}
+/** 键盘按键上显示的完整字根表 */
+const keyRoots = computed<Record<string, string[]>>(() => {
+  const out: Record<string, string[]> = {}
   for (const [key, item] of Object.entries(zigenMap.value)) {
-    out[key] = item.radicals.slice(0, 3).join(' ')
+    out[key] = item.radicals
   }
   return out
 })
@@ -71,7 +71,12 @@ let timeoutTimer: number | undefined
 let fbTimer: number | undefined
 
 // ---------- 字根模式 ----------
-const zigenQueue = ref<string[]>([])
+/** 字根练习题：目标字根与对应键位 */
+interface ZigenTask {
+  key: string
+  root: string
+}
+const zigenQueue = ref<ZigenTask[]>([])
 const zigenIndex = ref(0)
 const zigenWrong = ref<boolean[]>([])
 const zigenCorrectKeys = ref(0)
@@ -110,13 +115,25 @@ function stateOf(state: string, wrong: boolean): TextCharState {
   return state === 'active' ? 'active' : 'pending'
 }
 
+/** 从键位池生成字根练习题（每个题随机取该键的一个字根） */
+function makeZigenTasks(pool: string[], count: number): ZigenTask[] {
+  const out: ZigenTask[] = []
+  for (let i = 0; i < count; i += 1) {
+    const key = pool[Math.floor(Math.random() * pool.length)]
+    const roots = zigenMap.value[key]?.radicals ?? []
+    const root =
+      roots.length > 0 ? roots[Math.floor(Math.random() * roots.length)] : key.toUpperCase()
+    out.push({ key, root })
+  }
+  return out
+}
+
 const zigenItems = computed<{ char: string; state: TextCharState }[]>(() =>
-  zigenQueue.value.map((key, i) => {
-    const name = zigenMap.value[key]?.name ?? key.toUpperCase()
+  zigenQueue.value.map((task, i) => {
     let state: TextCharState = 'pending'
     if (i < zigenIndex.value) state = zigenWrong.value[i] ? 'done-wrong' : 'done-clean'
     else if (i === zigenIndex.value) state = 'active'
-    return { char: name, state }
+    return { char: task.root, state }
   }),
 )
 
@@ -164,7 +181,7 @@ const panelTitle = computed(() => {
 
 // ---------- 下一步按键 ----------
 const highlight = computed(() => {
-  if (mode.value === 'zigen') return zigenQueue.value[zigenIndex.value] ?? ''
+  if (mode.value === 'zigen') return zigenQueue.value[zigenIndex.value]?.key ?? ''
   const s = session.value
   if (!s || s.finished) return ''
   const item = s.items[s.cursor]
@@ -236,7 +253,7 @@ function resetCommon(): void {
   now.value = Date.now()
 }
 
-function initZigen(queue: string[], isDrill = false): void {
+function initZigen(queue: ZigenTask[], isDrill = false): void {
   resetCommon()
   drill.value = isDrill
   zigenQueue.value = queue
@@ -306,7 +323,7 @@ function setFeedback(key: string, type: KeyFeedback['type'], keep = true): void 
 function handleZigenKey(key: string): void {
   if (!/^[a-z]$/.test(key)) return
   zigenTotalKeys.value += 1
-  const expect = zigenQueue.value[zigenIndex.value]
+  const expect = zigenQueue.value[zigenIndex.value]?.key
   if (key === expect) {
     zigenCorrectKeys.value += 1
     setFeedback(key, 'ok')
@@ -381,13 +398,21 @@ function finish(): void {
 }
 
 function onPractice(ids: string[]): void {
+  if (mode.value === 'zigen') {
+    const tasks: ZigenTask[] = []
+    for (const key of ids) {
+      tasks.push(...makeZigenTasks([key, key, key], 3))
+    }
+    tasks.sort(() => Math.random() - 0.5)
+    initZigen(tasks, true)
+    return
+  }
   const repeated: string[] = []
   for (const id of ids) {
     for (let i = 0; i < 3; i += 1) repeated.push(id)
   }
   repeated.sort(() => Math.random() - 0.5)
-  if (mode.value === 'zigen') initZigen(repeated, true)
-  else initText(repeated, true)
+  initText(repeated, true)
 }
 
 function closeResult(): void {
@@ -422,11 +447,7 @@ onMounted(async () => {
       return
     }
     if (lv.type === 'zigen') {
-      const queue: string[] = []
-      for (let i = 0; i < lv.length; i += 1) {
-        queue.push(lv.pool[Math.floor(Math.random() * lv.pool.length)])
-      }
-      initZigen(queue)
+      initZigen(makeZigenTasks(lv.pool, lv.length))
     } else if (lv.type === 'article') {
       await initArticle(lv)
     } else {
@@ -476,7 +497,7 @@ onUnmounted(() => {
       :highlight="highlight"
       :feedback="feedback"
       :sticky="sticky"
-      :key-roots="keyRoots"
+      :roots="keyRoots"
       :disabled="finished"
     />
 

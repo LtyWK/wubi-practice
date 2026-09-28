@@ -9,12 +9,12 @@ const props = withDefaults(
     feedback?: KeyFeedback | null
     /** 常亮状态（最近一次输入结果） */
     sticky?: KeyFeedback | null
-    /** 键位 → 字根显示文本（如 "王 一 五"） */
-    keyRoots?: Record<string, string>
+    /** 键位 → 全部字根（含键名字根，键名在最前） */
+    roots?: Record<string, string[]>
     /** 禁用态 */
     disabled?: boolean
   }>(),
-  { highlight: '', feedback: null, sticky: null, keyRoots: undefined, disabled: false },
+  { highlight: '', feedback: null, sticky: null, roots: undefined, disabled: false },
 )
 
 /** QWERTY 三行（配合真实键盘） */
@@ -54,8 +54,12 @@ function keyClass(key: string): Record<string, boolean> {
   <div class="vk" :class="{ 'vk--disabled': props.disabled }" aria-hidden="true">
     <div v-for="(row, ri) in ROWS" :key="ri" class="vk__row">
       <span v-for="key in row" :key="key" class="vk__key" :class="keyClass(key)">
-        <span class="vk__roots">{{ props.keyRoots?.[key] ?? '' }}</span>
         <span class="vk__letter">{{ key.toUpperCase() }}</span>
+        <span class="vk__roots">
+          <span v-for="(root, i) in props.roots?.[key] ?? []" :key="i" class="vk__root">
+            {{ root }}
+          </span>
+        </span>
       </span>
     </div>
     <div class="vk__row">
@@ -76,6 +80,7 @@ function keyClass(key: string): Record<string, boolean> {
   border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-5) var(--space-5);
   box-shadow: var(--shadow-sm);
+  overflow-x: auto;
 }
 
 .vk--disabled {
@@ -90,13 +95,13 @@ function keyClass(key: string): Record<string, boolean> {
 
 .vk__key {
   position: relative;
-  width: 68px;
-  height: 68px;
+  width: 84px;
+  height: 96px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
+  justify-content: flex-start;
+  padding: 12px 4px 6px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-key-bg);
@@ -133,43 +138,34 @@ function keyClass(key: string): Record<string, boolean> {
   background: #b1b0c9;
 }
 
-.vk__roots {
-  font-size: 0.75rem;
-  line-height: 1.1;
-  color: var(--color-text-muted);
-  max-width: 62px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: center;
-}
-
 .vk__letter {
   font-size: 1.0625rem;
   font-weight: 700;
   line-height: 1.1;
+  margin-bottom: 4px;
 }
 
-.vk__key--muted {
+.vk__roots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1px 5px;
+  max-width: 78px;
+}
+
+.vk__root {
+  font-size: 0.6875rem;
+  line-height: 1.25;
   color: var(--color-text-muted);
-  background: #fafafa;
 }
 
-.vk__key--space {
-  width: 420px;
-  max-width: 60vw;
-  font-size: var(--font-base);
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-
-/* 下一步高亮：呼吸 */
 .vk__key--hint {
   background: var(--key-hint, #cfe0f3);
   border-color: var(--color-primary);
   animation: vk-breathe 1.2s ease-in-out infinite;
 }
 
-.vk__key--hint .vk__roots {
+.vk__key--hint .vk__root {
   color: #3b5f8a;
 }
 
@@ -190,7 +186,7 @@ function keyClass(key: string): Record<string, boolean> {
   color: #3f7a58;
 }
 
-.vk__key--sticky-ok .vk__roots {
+.vk__key--sticky-ok .vk__root {
   color: #5e8f74;
 }
 
@@ -200,7 +196,7 @@ function keyClass(key: string): Record<string, boolean> {
   color: #a05555;
 }
 
-.vk__key--sticky-bad .vk__roots {
+.vk__key--sticky-bad .vk__root {
   color: #a86a6a;
 }
 
@@ -242,5 +238,20 @@ function keyClass(key: string): Record<string, boolean> {
   100% {
     background: var(--color-key-bg);
   }
+}
+
+.vk__key--muted {
+  background: #fafafa;
+}
+
+.vk__key--space {
+  width: 460px;
+  max-width: 60vw;
+  height: 52px;
+  justify-content: center;
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding: 0;
 }
 </style>
