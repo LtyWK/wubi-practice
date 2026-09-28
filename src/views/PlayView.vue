@@ -35,7 +35,16 @@ const { isStageUnlocked, recordResult } = useLevels()
 const { record, markMastered } = useMistakes()
 const { save, recordCharDone, recordCharError } = useSave()
 const { freeTitle, freeText } = useFreeText()
-const { soundOn } = useUiSettings()
+const { soundOn, volume, setVolume } = useUiSettings()
+const volumeOpen = ref(false)
+
+function onVolumeInput(e: Event): void {
+  setVolume(Number((e.target as HTMLInputElement).value) / 100)
+}
+
+function testSound(): void {
+  if (soundOn.value) playKeySound('ok', volume.value)
+}
 
 const levelId = computed(() => String(route.params.id))
 const isFree = computed(() => levelId.value === 'free')
@@ -322,7 +331,7 @@ function startIfNeeded(): void {
 }
 
 function setFeedback(key: string, type: KeyFeedback['type'], keep = true): void {
-  if (soundOn.value) playKeySound(type)
+  if (soundOn.value) playKeySound(type, volume.value)
   feedback.value = { key, type }
   if (keep && type !== 'timeout') sticky.value = { key, type }
   if (fbTimer) window.clearTimeout(fbTimer)
@@ -504,14 +513,34 @@ onUnmounted(() => {
       :input="currentHint.input"
     />
 
-    <VirtualKeyboard
-      :highlight="highlight"
-      :feedback="feedback"
-      :sticky="sticky"
-      :roots="keyRoots"
-      :short1="LEVEL1_CHARS"
-      :disabled="finished"
-    />
+    <div class="keyboard-wrap">
+      <div class="volume">
+        <button class="volume__btn" @click="volumeOpen = !volumeOpen">
+          {{ soundOn ? `音量 ${Math.round(volume * 100)}%` : '音效已关闭' }}
+        </button>
+        <div v-if="volumeOpen" class="volume__panel">
+          <input
+            class="volume__range"
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            :value="Math.round(volume * 100)"
+            :disabled="!soundOn"
+            @input="onVolumeInput"
+          />
+          <button class="volume__test" :disabled="!soundOn" @click="testSound">试听</button>
+        </div>
+      </div>
+      <VirtualKeyboard
+        :highlight="highlight"
+        :feedback="feedback"
+        :sticky="sticky"
+        :roots="keyRoots"
+        :short1="LEVEL1_CHARS"
+        :disabled="finished"
+      />
+    </div>
 
     <ResultModal
       :visible="showResult"
@@ -534,5 +563,65 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+}
+
+.keyboard-wrap {
+  position: relative;
+}
+
+.volume {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-2);
+  position: relative;
+}
+
+.volume__btn {
+  padding: 2px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+.volume__btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.volume__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.volume__range {
+  width: 150px;
+  accent-color: var(--color-primary);
+}
+
+.volume__test {
+  padding: 2px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-sm);
+}
+
+.volume__test:disabled,
+.volume__range:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>
