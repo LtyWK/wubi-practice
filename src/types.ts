@@ -49,6 +49,16 @@ export interface ProgressData {
   best: Record<string, { speed: number; accuracy: number; at: number }>
 }
 
+/** 结算弹窗中的错误选项 */
+export interface MistakeOption {
+  /** 唯一标识：单字为汉字，字根为键位 */
+  id: string
+  /** 主显示文本 */
+  main: string
+  /** 详情文本 */
+  detail: string
+}
+
 /** 错题本（仅单字；字根错误仅存于会话级） */
 export type MistakeBook = Record<
   string,
