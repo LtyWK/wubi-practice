@@ -330,6 +330,7 @@ progress.stage__bar::-moz-progress-bar {
   font-size: var(--font-base);
   font-weight: 600;
   line-height: 1.4;
+  color: var(--color-text);
 }
 
 .card__req,
