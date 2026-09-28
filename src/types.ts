@@ -78,6 +78,16 @@ export interface ProgressData {
   best: Record<string, { speed: number; accuracy: number; at: number }>
 }
 
+/** 文本面板字符状态（V2 五态） */
+export type TextCharState = 'pending' | 'active' | 'done-clean' | 'done-wrong' | 'skip'
+
+/** 键盘按键反馈 */
+export interface KeyFeedback {
+  /** 键位（字母或空格 " "） */
+  key: string
+  type: 'ok' | 'bad' | 'timeout'
+}
+
 /** 结算弹窗中的错误选项 */
 export interface MistakeOption {
   /** 唯一标识：单字为汉字，字根为键位 */

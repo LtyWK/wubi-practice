@@ -14,6 +14,14 @@
   --color-key-bg: #f3f4f6;
   --color-key-active: #bfdbfe;
 
+  /* V2 文本五态（低饱和） */
+  --text-pending: #98a2b3;
+  --text-done: #6aa87f;
+  --text-wrong: #c47b7b;
+  --text-skip: #b6bec9;
+  --text-active-bg: #eef2f7;
+  --key-hint: #cfe0f3;
+
   --font-sm: 0.8125rem;
   --font-base: 0.9375rem;
   --font-md: 1.0625rem;
