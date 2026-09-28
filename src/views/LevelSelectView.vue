@@ -172,7 +172,7 @@ function tip(level: LevelConfig): string {
   font-weight: 700;
   font-size: var(--font-md);
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   z-index: 1;
 }
 
@@ -293,7 +293,6 @@ progress.stage__bar::-moz-progress-bar {
 
 .card:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .card--passed {

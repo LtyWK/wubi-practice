@@ -13,6 +13,15 @@
   --color-danger-border: #e3c3c3;
   --color-warning: #b08a3e;
   --color-locked: #c6ccd4;
+  --color-on-primary: #ffffff;
+  --area-1: #a8c3a0;
+  --area-2: #a0b8cd;
+  --area-3: #cdb8a0;
+  --area-4: #c3a8bd;
+  --area-5: #b1b0c9;
+  --flash-ok: #b7dcc4;
+  --flash-bad: #e8bcbc;
+  --flash-timeout: #ecd9a6;
   --color-key-bg: #f3f4f6;
   --color-key-active: #bfdbfe;
   --key-muted-bg: #fafafa;
@@ -71,6 +80,15 @@ html[data-theme='dark'] {
   --color-danger-border: #5a3a3a;
   --color-warning: #d9b06a;
   --color-locked: #4a505a;
+  --color-on-primary: #10151c;
+  --area-1: #55684f;
+  --area-2: #4f647a;
+  --area-3: #6e5f4c;
+  --area-4: #6b5563;
+  --area-5: #555a75;
+  --flash-ok: #3f6b52;
+  --flash-bad: #6b4141;
+  --flash-timeout: #6b5a33;
   --color-key-bg: #232830;
   --color-key-active: #33465e;
   --key-muted-bg: #1a1e24;
@@ -102,6 +120,52 @@ html,
 body {
   margin: 0;
   padding: 0;
+}
+
+html {
+  background: var(--color-bg);
+}
+
+/* 表单控件跟随主题 */
+input,
+textarea,
+select {
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+input[type='checkbox'],
+input[type='range'] {
+  accent-color: var(--color-primary);
+}
+
+/* 滚动条跟随主题 */
+* {
+  scrollbar-color: var(--color-border) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 body {

@@ -166,7 +166,7 @@ function onPractice(): void {
 .btn--primary {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .btn:disabled {

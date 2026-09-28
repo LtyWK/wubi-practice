@@ -126,19 +126,19 @@ function keyClass(key: string): Record<string, boolean> {
 }
 
 .vk__key--area-1::before {
-  background: #a8c3a0;
+  background: var(--area-1);
 }
 .vk__key--area-2::before {
-  background: #a0b8cd;
+  background: var(--area-2);
 }
 .vk__key--area-3::before {
-  background: #cdb8a0;
+  background: var(--area-3);
 }
 .vk__key--area-4::before {
-  background: #c3a8bd;
+  background: var(--area-4);
 }
 .vk__key--area-5::before {
-  background: #b1b0c9;
+  background: var(--area-5);
 }
 
 .vk__short {
@@ -236,7 +236,7 @@ function keyClass(key: string): Record<string, boolean> {
 
 @keyframes vk-flash-ok {
   0% {
-    background: #b7dcc4;
+    background: var(--flash-ok);
   }
   100% {
     background: var(--color-key-bg);
@@ -245,7 +245,7 @@ function keyClass(key: string): Record<string, boolean> {
 
 @keyframes vk-flash-bad {
   0% {
-    background: #e8bcbc;
+    background: var(--flash-bad);
   }
   100% {
     background: var(--color-key-bg);
@@ -254,7 +254,7 @@ function keyClass(key: string): Record<string, boolean> {
 
 @keyframes vk-flash-timeout {
   0% {
-    background: #ecd9a6;
+    background: var(--flash-timeout);
   }
   100% {
     background: var(--color-key-bg);

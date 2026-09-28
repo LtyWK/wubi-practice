@@ -147,6 +147,8 @@ function startCustom(): void {
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-family: inherit;
   font-size: var(--font-base);
   margin-bottom: var(--space-3);
@@ -168,11 +170,17 @@ function startCustom(): void {
 .btn--primary {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.65;
   cursor: not-allowed;
+}
+
+.btn--primary:disabled {
+  background: var(--color-primary-weak);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
 }
 </style>
