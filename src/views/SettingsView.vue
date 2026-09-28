@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useSave } from '@/composables/useSave'
+import { useLevels } from '@/composables/useLevels'
 
 const { save, exportSave, importSave, resetAll } = useSave()
+const { unlockAll } = useLevels()
 
 const message = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -50,6 +52,11 @@ async function onFile(e: Event): Promise<void> {
   input.value = ''
 }
 
+function doUnlockAll(): void {
+  unlockAll()
+  message.value = '已解锁全部阶段'
+}
+
 function doReset(): void {
   if (!window.confirm('确定清空全部进度、错题与统计？此操作不可恢复。')) return
   resetAll()
@@ -82,6 +89,12 @@ function doReset(): void {
       <p class="card__desc">选择此前导出的 JSON 存档文件，导入将覆盖当前数据。</p>
       <input ref="fileInput" class="hidden" type="file" accept="application/json,.json" @change="onFile" />
       <button class="btn" @click="pickFile">选择文件导入</button>
+    </section>
+
+    <section class="card">
+      <h2 class="card__title">解锁</h2>
+      <p class="card__desc">一键解锁全部阶段（不影响已有成绩与错题）。</p>
+      <button class="btn" @click="doUnlockAll">解锁全部关卡</button>
     </section>
 
     <section class="card card--danger">

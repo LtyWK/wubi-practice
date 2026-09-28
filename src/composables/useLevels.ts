@@ -10,6 +10,7 @@ export function useLevels(): {
   levelResult: (levelId: string) => LevelResult | undefined
   stageProgress: (stage: StageConfig) => { passed: number; total: number }
   syncUnlocks: () => void
+  unlockAll: () => void
   recordResult: (
     levelId: string,
     speed: number,
@@ -50,6 +51,11 @@ export function useLevels(): {
     syncUnlocks()
   }
 
+  /** 一键解锁全部阶段（存档页提供） */
+  function unlockAll(): void {
+    for (const stage of STAGES) unlockStage(stage.id)
+  }
+
   return {
     stages: STAGES,
     isStageUnlocked,
@@ -57,6 +63,7 @@ export function useLevels(): {
     levelResult: getLevelResult,
     stageProgress,
     syncUnlocks,
+    unlockAll,
     recordResult,
   }
 }
