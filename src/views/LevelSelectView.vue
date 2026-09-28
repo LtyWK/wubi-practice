@@ -13,12 +13,14 @@ onMounted(() => {
 })
 
 const totalLevels = computed(() => stages.reduce((n, s) => n + s.levels.length, 0))
-const passedLevels = computed(() =>
-  stages.reduce((n, s) => n + stageProgress(s).passed, 0),
-)
+const passedLevels = computed(() => stages.reduce((n, s) => n + stageProgress(s).passed, 0))
 
 function pct(n: number): string {
   return `${Math.round(n * 100)}%`
+}
+
+function unitOf(level: LevelConfig): string {
+  return level.type === 'zigen' ? '键/分' : '字/分'
 }
 
 function go(level: LevelConfig): void {
@@ -32,16 +34,21 @@ function stageClass(stage: StageConfig): Record<string, boolean> {
   }
 }
 
-function dotClass(stage: StageConfig, level: LevelConfig): Record<string, boolean> {
+function cardClass(stage: StageConfig, level: LevelConfig): Record<string, boolean> {
   return {
-    'dot--passed': isLevelPassed(level.id),
-    'dot--open': isStageUnlocked(stage.id) && !isLevelPassed(level.id),
+    'card--passed': isLevelPassed(level.id),
+    'card--open': isStageUnlocked(stage.id) && !isLevelPassed(level.id),
   }
+}
+
+function badge(stage: StageConfig, level: LevelConfig): string {
+  if (isLevelPassed(level.id)) return '已通关'
+  return isStageUnlocked(stage.id) ? '开始' : '未解锁'
 }
 
 function tip(level: LevelConfig): string {
   const best = levelResult(level.id)
-  const req = `达标：≥ ${level.require.speed} · ${pct(level.require.accuracy)}`
+  const req = `达标：≥ ${level.require.speed} ${unitOf(level)} · ${pct(level.require.accuracy)}`
   return best
     ? `${level.title}\n${req}\n最佳：${best.bestSpeed.toFixed(0)} · ${pct(best.bestAccuracy)}`
     : `${level.title}\n${req}\n未通关`
@@ -78,23 +85,29 @@ function tip(level: LevelConfig): string {
           ></progress>
 
           <ul class="levels">
-            <li v-for="(level, li) in stage.levels" :key="level.id" class="level">
+            <li v-for="(level, li) in stage.levels" :key="level.id">
               <button
-                class="dot"
-                :class="dotClass(stage, level)"
+                class="card"
+                :class="cardClass(stage, level)"
                 :disabled="!isStageUnlocked(stage.id)"
                 :title="tip(level)"
                 @click="go(level)"
               >
-                <span class="dot__no">{{ li + 1 }}</span>
+                <span class="card__no">{{ li + 1 }}</span>
+                <span class="card__body">
+                  <span class="card__title">{{ level.title }}</span>
+                  <span class="card__req">
+                    ≥ {{ level.require.speed }} {{ unitOf(level) }} · {{ pct(level.require.accuracy) }}
+                  </span>
+                  <span class="card__best">
+                    <template v-if="levelResult(level.id)">
+                      最佳 {{ levelResult(level.id)?.bestSpeed.toFixed(0) }} {{ unitOf(level) }}
+                    </template>
+                    <template v-else>尚无成绩</template>
+                  </span>
+                </span>
+                <span class="card__badge">{{ badge(stage, level) }}</span>
               </button>
-              <span class="dot__name">{{ level.title }}</span>
-              <span class="dot__best">
-                <template v-if="levelResult(level.id)">
-                  {{ levelResult(level.id)?.bestSpeed.toFixed(0) }}
-                </template>
-                <template v-else>—</template>
-              </span>
             </li>
           </ul>
         </div>
@@ -105,7 +118,7 @@ function tip(level: LevelConfig): string {
 
 <style scoped>
 .map {
-  max-width: 820px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -178,6 +191,7 @@ function tip(level: LevelConfig): string {
   background: var(--color-surface);
   padding: var(--space-4) var(--space-5);
   box-shadow: var(--shadow-sm);
+  min-width: 0;
 }
 
 .stage--locked .stage__body {
@@ -239,55 +253,101 @@ progress.stage__bar::-moz-progress-bar {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--space-3);
 }
 
-.level {
+/* 小关卡片 */
+.card {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-}
-
-.dot {
-  flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 2px solid var(--color-border);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   background: var(--color-surface);
-  color: var(--color-text-muted);
-  font-weight: 600;
-  display: grid;
-  place-items: center;
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s,
+    background 0.15s;
 }
 
-.dot--open {
+.card:hover:not(:disabled) {
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
-.dot--passed {
-  border-color: var(--color-success);
-  background: var(--color-success-weak);
-  color: var(--color-success);
+.card:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+  box-shadow: var(--shadow-sm);
 }
 
-.dot:disabled {
+.card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.card:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.dot__name {
-  flex: 1;
+.card--passed {
+  border-color: #9cc9ae;
+  background: var(--color-success-weak);
+}
+
+.card__no {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
   font-size: var(--font-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+}
+
+.card--passed .card__no {
+  background: #b7dcc4;
+  color: #3f7a58;
+}
+
+.card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.card__title {
+  font-size: var(--font-base);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.card__req,
+.card__best {
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.card__badge {
+  flex: none;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-primary);
   white-space: nowrap;
 }
 
-.dot__best {
-  font-size: var(--font-sm);
-  color: var(--color-text-muted);
+.card--passed .card__badge {
+  color: var(--color-success);
 }
 </style>
