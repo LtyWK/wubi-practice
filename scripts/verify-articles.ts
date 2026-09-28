@@ -42,14 +42,14 @@ function main(): void {
       continue
     }
     const count = hanCount(a.paragraphs.join(''))
-    if (count < 10) errors.push(`汉字过少（${count}）：${a.id}`)
+    if (count < 200) errors.push(`汉字少于 200（${count}）：${a.id}`)
     if (a.difficulty < 1 || a.difficulty > 4) errors.push(`难度越界：${a.id}`)
   }
 
   const stagesSource = readFileSync(resolve(ROOT, 'src/data/stages.ts'), 'utf8')
   const referenced = [...stagesSource.matchAll(/'([a-z0-9-]+)'/g)]
     .map((m) => m[1])
-    .filter((id) => /^(jingyesi|dengguanquelou|zaofabaidicheng|shanxing|shuidiaogetou|loushiming|ailianshuo|chun|yueyanglou)$/.test(id))
+    .filter((id) => /^(tangshi-5|tangshi-7|songci|guwen|xiandai|yueyanglou)$/.test(id))
   for (const id of referenced) {
     if (!ids.has(id)) errors.push(`stages 引用不存在：${id}`)
   }
