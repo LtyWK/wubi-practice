@@ -6,7 +6,8 @@ import ResultModal from '@/components/ResultModal.vue'
 import StatsBar from '@/components/StatsBar.vue'
 import TextPanel from '@/components/TextPanel.vue'
 import VirtualKeyboard from '@/components/VirtualKeyboard.vue'
-import { loadAllChars, loadArticles, loadFreq1Chars, loadZigen } from '@/data/loader'
+import { loadArticles, loadZigen } from '@/data/loader'
+import { buildPool, isHan, sample } from '@/data/pool'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
@@ -72,10 +73,6 @@ const zigenErrors = ref<Record<string, number>>({})
 // ---------- 文本模式 ----------
 const session = ref<PracticeSession | null>(null)
 const displayMap = ref<{ char: string; input: number }[]>([])
-
-function isHan(c: string): boolean {
-  return /[\u4e00-\u9fff]/.test(c)
-}
 
 // ---------- 统计 ----------
 const doneCount = computed(() =>
@@ -278,40 +275,6 @@ function buildDisplay(text: string): void {
     }
   }
   displayMap.value = map
-}
-
-function sample(pool: string[], count: number): string[] {
-  if (pool.length === 0) return []
-  const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  const out: string[] = []
-  while (out.length < count) {
-    out.push(...shuffled.slice(0, count - out.length))
-  }
-  return out.slice(0, count)
-}
-
-async function buildPool(lv: LevelConfig): Promise<string[]> {
-  if (lv.source === 'short1' || lv.source === 'short2') {
-    const all = await loadAllChars()
-    const len = lv.source === 'short1' ? 1 : 2
-    let pool = Object.keys(all).filter((c) => all[c].short.some((s) => s.length === len))
-    if (lv.starts) {
-      const set = new Set(lv.starts)
-      pool = pool.filter((c) => {
-        const shortCode = all[c].short.find((s) => s.length === len)
-        return shortCode ? set.has(shortCode[0]) : false
-      })
-    }
-    return pool
-  }
-  const freq = await loadFreq1Chars()
-  let pool = Object.keys(freq)
-  if (lv.source === 'idcode') pool = pool.filter((c) => freq[c].idcode)
-  if (lv.starts) {
-    const set = new Set(lv.starts)
-    pool = pool.filter((c) => set.has(freq[c].code[0]))
-  }
-  return pool
 }
 
 async function initArticle(lv: LevelConfig): Promise<void> {
