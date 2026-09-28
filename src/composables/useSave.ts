@@ -92,6 +92,17 @@ export function loadSaveFromStorage(): SaveV2 {
   return loadSave()
 }
 
+// 页面隐藏或关闭前落盘，避免防抖窗口内丢失进度
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', flushSave)
+  window.addEventListener('pagehide', flushSave)
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushSave()
+    })
+  }
+}
+
 let timer: ReturnType<typeof setTimeout> | undefined
 
 /** 立即写入 localStorage（导出、测试、页面卸载前使用） */
