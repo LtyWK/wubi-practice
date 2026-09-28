@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLevels } from '@/composables/useLevels'
-import type { LevelConfig } from '@/types'
+import type { LevelConfig, StageConfig } from '@/types'
 
 const router = useRouter()
 const { stages, isStageUnlocked, isLevelPassed, levelResult, stageProgress, syncUnlocks } =
@@ -12,6 +12,11 @@ onMounted(() => {
   syncUnlocks()
 })
 
+const totalLevels = computed(() => stages.reduce((n, s) => n + s.levels.length, 0))
+const passedLevels = computed(() =>
+  stages.reduce((n, s) => n + stageProgress(s).passed, 0),
+)
+
 function pct(n: number): string {
   return `${Math.round(n * 100)}%`
 }
@@ -19,78 +24,164 @@ function pct(n: number): string {
 function go(level: LevelConfig): void {
   router.push(`/play/${level.id}`)
 }
+
+function stageClass(stage: StageConfig): Record<string, boolean> {
+  return {
+    'stage--locked': !isStageUnlocked(stage.id),
+    'stage--done': isStageUnlocked(stage.id) && stageProgress(stage).passed === stage.levels.length,
+  }
+}
+
+function dotClass(stage: StageConfig, level: LevelConfig): Record<string, boolean> {
+  return {
+    'dot--passed': isLevelPassed(level.id),
+    'dot--open': isStageUnlocked(stage.id) && !isLevelPassed(level.id),
+  }
+}
+
+function tip(level: LevelConfig): string {
+  const best = levelResult(level.id)
+  const req = `达标：≥ ${level.require.speed} · ${pct(level.require.accuracy)}`
+  return best
+    ? `${level.title}\n${req}\n最佳：${best.bestSpeed.toFixed(0)} · ${pct(best.bestAccuracy)}`
+    : `${level.title}\n${req}\n未通关`
+}
 </script>
 
 <template>
-  <section class="stages">
-    <h1 class="stages__title">关卡地图（临时列表，地图化界面开发中）</h1>
+  <section class="map">
+    <header class="map__head">
+      <h1 class="map__title">关卡地图</h1>
+      <p class="map__sub">
+        {{ stages.length }} 个阶段 · {{ totalLevels }} 个小关 · 已通关 {{ passedLevels }}
+      </p>
+    </header>
 
-    <section
-      v-for="stage in stages"
-      :key="stage.id"
-      class="stage"
-      :class="{ 'stage--locked': !isStageUnlocked(stage.id) }"
-    >
-      <header class="stage__head">
-        <h2 class="stage__title">{{ stage.title }}</h2>
-        <span class="stage__progress">
-          {{ stageProgress(stage).passed }}/{{ stageProgress(stage).total }}
-        </span>
-      </header>
-      <p class="stage__desc">{{ stage.description }}</p>
+    <ol class="stages">
+      <li v-for="(stage, si) in stages" :key="stage.id" class="stage" :class="stageClass(stage)">
+        <div class="stage__badge">{{ si + 1 }}</div>
 
-      <ul class="levels">
-        <li v-for="level in stage.levels" :key="level.id" class="level">
-          <button
-            class="level__btn"
-            :class="{ 'level__btn--passed': isLevelPassed(level.id) }"
-            :disabled="!isStageUnlocked(stage.id)"
-            @click="go(level)"
-          >
-            <span class="level__name">{{ level.title }}</span>
-            <span class="level__meta">
-              ≥ {{ level.require.speed }} · {{ pct(level.require.accuracy) }}
+        <div class="stage__body">
+          <header class="stage__head">
+            <h2 class="stage__title">{{ stage.title }}</h2>
+            <span v-if="!isStageUnlocked(stage.id)" class="stage__lock">未解锁</span>
+            <span v-else class="stage__count">
+              {{ stageProgress(stage).passed }}/{{ stageProgress(stage).total }}
             </span>
-            <span class="level__best">
-              <template v-if="levelResult(level.id)">
-                最佳 {{ levelResult(level.id)?.bestSpeed.toFixed(0) }}
-              </template>
-              <template v-else>—</template>
-            </span>
-            <span class="level__state">
-              {{ isLevelPassed(level.id) ? '已通关' : isStageUnlocked(stage.id) ? '开始' : '未解锁' }}
-            </span>
-          </button>
-        </li>
-      </ul>
-    </section>
+          </header>
+          <p class="stage__desc">{{ stage.description }}</p>
+
+          <progress
+            class="stage__bar"
+            :value="stageProgress(stage).passed"
+            :max="stageProgress(stage).total"
+          ></progress>
+
+          <ul class="levels">
+            <li v-for="(level, li) in stage.levels" :key="level.id" class="level">
+              <button
+                class="dot"
+                :class="dotClass(stage, level)"
+                :disabled="!isStageUnlocked(stage.id)"
+                :title="tip(level)"
+                @click="go(level)"
+              >
+                <span class="dot__no">{{ li + 1 }}</span>
+              </button>
+              <span class="dot__name">{{ level.title }}</span>
+              <span class="dot__best">
+                <template v-if="levelResult(level.id)">
+                  {{ levelResult(level.id)?.bestSpeed.toFixed(0) }}
+                </template>
+                <template v-else>—</template>
+              </span>
+            </li>
+          </ul>
+        </div>
+      </li>
+    </ol>
   </section>
 </template>
 
 <style scoped>
-.stages {
-  max-width: 760px;
+.map {
+  max-width: 820px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
 }
 
-.stages__title {
-  font-size: var(--font-lg);
+.map__head {
+  margin-bottom: var(--space-5);
+}
+
+.map__title {
+  font-size: var(--font-xl);
+}
+
+.map__sub {
   color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  margin-top: var(--space-1);
+}
+
+.stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
 .stage {
+  position: relative;
+  display: flex;
+  gap: var(--space-4);
+}
+
+/* 阶段间连接线 */
+.stage:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 21px;
+  top: 44px;
+  bottom: calc(-1 * var(--space-4));
+  width: 2px;
+  background: var(--color-border);
+}
+
+.stage__badge {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: var(--font-md);
+  background: var(--color-primary);
+  color: #fff;
+  z-index: 1;
+}
+
+.stage--locked .stage__badge {
+  background: #c6ccd4;
+}
+
+.stage--done .stage__badge {
+  background: var(--color-success);
+}
+
+.stage__body {
+  flex: 1;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
-  padding: var(--space-5);
+  padding: var(--space-4) var(--space-5);
   box-shadow: var(--shadow-sm);
 }
 
-.stage--locked {
-  opacity: 0.55;
+.stage--locked .stage__body {
+  opacity: 0.6;
 }
 
 .stage__head {
@@ -103,15 +194,44 @@ function go(level: LevelConfig): void {
   font-size: var(--font-md);
 }
 
-.stage__progress {
+.stage__count {
   color: var(--color-primary);
   font-weight: 600;
+}
+
+.stage__lock {
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
 }
 
 .stage__desc {
   color: var(--color-text-muted);
   font-size: var(--font-sm);
+  margin: var(--space-1) 0 var(--space-3);
+}
+
+.stage__bar {
+  width: 100%;
+  height: 6px;
+  border: none;
+  border-radius: 3px;
+  overflow: hidden;
   margin-bottom: var(--space-4);
+}
+
+progress.stage__bar::-webkit-progress-bar {
+  background: var(--color-key-bg);
+  border-radius: 3px;
+}
+
+progress.stage__bar::-webkit-progress-value {
+  background: var(--color-success);
+  border-radius: 3px;
+}
+
+progress.stage__bar::-moz-progress-bar {
+  background: var(--color-success);
+  border-radius: 3px;
 }
 
 .levels {
@@ -119,45 +239,55 @@ function go(level: LevelConfig): void {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: var(--space-3);
 }
 
-.level__btn {
-  width: 100%;
+.level {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-key-bg);
-  text-align: left;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.level__btn--passed {
+.dot {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+
+.dot--open {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.dot--passed {
   border-color: var(--color-success);
   background: var(--color-success-weak);
+  color: var(--color-success);
 }
 
-.level__btn:disabled {
+.dot:disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.level__name {
-  font-weight: 600;
+.dot__name {
+  flex: 1;
+  font-size: var(--font-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.level__meta,
-.level__best {
+.dot__best {
   font-size: var(--font-sm);
   color: var(--color-text-muted);
-}
-
-.level__state {
-  font-size: var(--font-sm);
-  color: var(--color-primary);
-  font-weight: 600;
 }
 </style>
