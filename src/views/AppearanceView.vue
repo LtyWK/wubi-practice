@@ -2,7 +2,8 @@
 import { useUiSettings, type ThemeMode } from '@/composables/useUiSettings'
 import { playKeySound } from '@/audio/sound'
 
-const { theme, soundOn, volume, setTheme, setSound, setVolume } = useUiSettings()
+const { theme, soundOn, volume, stickyOn, setTheme, setSound, setVolume, setSticky } =
+  useUiSettings()
 
 const THEME_OPTIONS: { value: ThemeMode; label: string; desc: string }[] = [
   { value: 'auto', label: '跟随系统', desc: '随操作系统的深浅色设置自动切换' },
@@ -20,6 +21,10 @@ function onVolumeInput(e: Event): void {
 
 function testSound(): void {
   if (soundOn.value) playKeySound('ok', volume.value)
+}
+
+function onStickyChange(e: Event): void {
+  setSticky((e.target as HTMLInputElement).checked)
 }
 </script>
 
@@ -41,6 +46,14 @@ function testSound(): void {
           </button>
         </li>
       </ul>
+    </section>
+
+    <section class="card">
+      <h2 class="card__title">按键反馈</h2>
+      <label class="check">
+        <input type="checkbox" :checked="stickyOn" @change="onStickyChange" />
+        按键亮显（最近一次输入结果在键盘上常亮）
+      </label>
     </section>
 
     <section class="card">

@@ -9,6 +9,7 @@ const ALIGN_KEY = 'wubi.ui.align'
 const THEME_KEY = 'wubi.ui.theme'
 const SOUND_KEY = 'wubi.ui.sound'
 const VOLUME_KEY = 'wubi.ui.volume'
+const STICKY_KEY = 'wubi.ui.sticky'
 
 /** 默认音量（0-1） */
 const DEFAULT_VOLUME = 1
@@ -44,6 +45,8 @@ const align = ref<TextAlign>(read(ALIGN_KEY) === 'left' ? 'left' : 'center')
 const theme = ref<ThemeMode>(initialTheme())
 const soundOn = ref<boolean>(read(SOUND_KEY) !== 'off')
 const volume = ref<number>(initialVolume())
+/** 按键亮显（最近一次输入结果在键盘上常亮） */
+const stickyOn = ref<boolean>(read(STICKY_KEY) !== 'off')
 
 function systemPrefersDark(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
@@ -66,16 +69,18 @@ if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
   })
 }
 
-/** UI 偏好：文本对齐、主题、按键音效与音量（本地保存，不进入存档导出） */
+/** UI 偏好：文本对齐、主题、按键音效与音量、按键亮显（本地保存，不进入存档导出） */
 export function useUiSettings(): {
   align: typeof align
   theme: typeof theme
   soundOn: typeof soundOn
   volume: typeof volume
+  stickyOn: typeof stickyOn
   setAlign: (value: TextAlign) => void
   setTheme: (value: ThemeMode) => void
   setSound: (value: boolean) => void
   setVolume: (value: number) => void
+  setSticky: (value: boolean) => void
   applyTheme: () => void
 } {
   function setAlign(value: TextAlign): void {
@@ -100,5 +105,22 @@ export function useUiSettings(): {
     write(VOLUME_KEY, String(v))
   }
 
-  return { align, theme, soundOn, volume, setAlign, setTheme, setSound, setVolume, applyTheme }
+  function setSticky(value: boolean): void {
+    stickyOn.value = value
+    write(STICKY_KEY, value ? 'on' : 'off')
+  }
+
+  return {
+    align,
+    theme,
+    soundOn,
+    volume,
+    stickyOn,
+    setAlign,
+    setTheme,
+    setSound,
+    setVolume,
+    setSticky,
+    applyTheme,
+  }
 }

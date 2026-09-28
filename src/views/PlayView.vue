@@ -35,7 +35,7 @@ const { isStageUnlocked, recordResult } = useLevels()
 const { record, markMastered } = useMistakes()
 const { save, recordCharDone, recordCharError } = useSave()
 const { freeTitle, freeText } = useFreeText()
-const { soundOn, volume, setVolume } = useUiSettings()
+const { soundOn, volume, setVolume, stickyOn, setSticky } = useUiSettings()
 const volumeOpen = ref(false)
 
 function onVolumeInput(e: Event): void {
@@ -333,7 +333,7 @@ function startIfNeeded(): void {
 function setFeedback(key: string, type: KeyFeedback['type'], keep = true): void {
   if (soundOn.value) playKeySound(type, volume.value)
   feedback.value = { key, type }
-  if (keep && type !== 'timeout') sticky.value = { key, type }
+  if (keep && type !== 'timeout' && stickyOn.value) sticky.value = { key, type }
   if (fbTimer) window.clearTimeout(fbTimer)
   fbTimer = window.setTimeout(() => {
     feedback.value = null
@@ -514,22 +514,31 @@ onUnmounted(() => {
     />
 
     <div class="keyboard-wrap">
-      <div class="volume">
-        <button class="volume__btn" @click="volumeOpen = !volumeOpen">
-          {{ soundOn ? `音量 ${Math.round(volume * 100)}%` : '音效已关闭' }}
+      <div class="controls">
+        <button
+          class="ctrl-btn"
+          :class="{ 'ctrl-btn--off': !stickyOn }"
+          @click="setSticky(!stickyOn)"
+        >
+          {{ stickyOn ? '按键亮显：开' : '按键亮显：关' }}
         </button>
-        <div v-if="volumeOpen" class="volume__panel">
-          <input
-            class="volume__range"
-            type="range"
-            min="0"
-            max="100"
-            step="5"
-            :value="Math.round(volume * 100)"
-            :disabled="!soundOn"
-            @input="onVolumeInput"
-          />
-          <button class="volume__test" :disabled="!soundOn" @click="testSound">试听</button>
+        <div class="volume">
+          <button class="ctrl-btn" @click="volumeOpen = !volumeOpen">
+            {{ soundOn ? `音量 ${Math.round(volume * 100)}%` : '音效已关闭' }}
+          </button>
+          <div v-if="volumeOpen" class="volume__panel">
+            <input
+              class="volume__range"
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              :value="Math.round(volume * 100)"
+              :disabled="!soundOn"
+              @input="onVolumeInput"
+            />
+            <button class="volume__test" :disabled="!soundOn" @click="testSound">试听</button>
+          </div>
         </div>
       </div>
       <VirtualKeyboard
@@ -569,14 +578,18 @@ onUnmounted(() => {
   position: relative;
 }
 
-.volume {
+.controls {
   display: flex;
   justify-content: flex-end;
+  gap: var(--space-2);
   margin-bottom: var(--space-2);
+}
+
+.volume {
   position: relative;
 }
 
-.volume__btn {
+.ctrl-btn {
   padding: 2px 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -585,9 +598,14 @@ onUnmounted(() => {
   font-size: var(--font-sm);
 }
 
-.volume__btn:hover {
+.ctrl-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+}
+
+.ctrl-btn--off {
+  color: var(--color-text-muted);
+  opacity: 0.65;
 }
 
 .volume__panel {
