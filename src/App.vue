@@ -13,6 +13,17 @@ import { RouterLink, RouterView } from 'vue-router'
           <RouterLink to="/appearance">外观</RouterLink>
           <RouterLink to="/settings">存档</RouterLink>
         </nav>
+        <div class="app-author">
+          <span class="app-author__name">作者 LtyWK</span>
+          <a
+            class="app-author__link"
+            href="https://github.com/LtyWK/wubi-practice"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+               GitHub
+          </a>
+        </div>
       </div>
     </header>
     <main class="app-main">
@@ -70,6 +81,38 @@ import { RouterLink, RouterView } from 'vue-router'
   font-weight: 600;
 }
 
+/* 作者栏（右侧，与标题对称） */
+.app-author {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+}
+
+.app-author__name {
+  color: var(--color-text-muted);
+}
+
+.app-author__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.app-author__link:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 .app-main {
   flex: 1;
   padding: var(--space-6);
@@ -83,6 +126,10 @@ import { RouterLink, RouterView } from 'vue-router'
   }
 
   .app-title {
+    position: static;
+  }
+
+  .app-author {
     position: static;
   }
 }
