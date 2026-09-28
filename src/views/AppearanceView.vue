@@ -2,7 +2,7 @@
 import { useUiSettings, type ThemeMode } from '@/composables/useUiSettings'
 import { playKeySound } from '@/audio/sound'
 
-const { theme, soundOn, volume, stickyOn, setTheme, setSound, setVolume, setSticky } =
+const { theme, soundOn, volume, hintsOn, setTheme, setSound, setVolume, setHints } =
   useUiSettings()
 
 const THEME_OPTIONS: { value: ThemeMode; label: string; desc: string }[] = [
@@ -23,8 +23,8 @@ function testSound(): void {
   if (soundOn.value) playKeySound('ok', volume.value)
 }
 
-function onStickyChange(e: Event): void {
-  setSticky((e.target as HTMLInputElement).checked)
+function onHintsChange(e: Event): void {
+  setHints((e.target as HTMLInputElement).checked)
 }
 </script>
 
@@ -51,8 +51,8 @@ function onStickyChange(e: Event): void {
     <section class="card">
       <h2 class="card__title">按键反馈</h2>
       <label class="check">
-        <input type="checkbox" :checked="stickyOn" @change="onStickyChange" />
-        按键亮显（最近一次输入结果在键盘上常亮）
+        <input type="checkbox" :checked="hintsOn" @change="onHintsChange" />
+        按键高亮提示（下一步按键高亮 + 最近一次输入常亮）
       </label>
     </section>
 

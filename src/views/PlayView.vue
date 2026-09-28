@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CodeHint from '@/components/CodeHint.vue'
 import ResultModal from '@/components/ResultModal.vue'
@@ -35,7 +35,7 @@ const { isStageUnlocked, recordResult } = useLevels()
 const { record, markMastered } = useMistakes()
 const { save, recordCharDone, recordCharError } = useSave()
 const { freeTitle, freeText } = useFreeText()
-const { soundOn, volume, setVolume, stickyOn, setSticky } = useUiSettings()
+const { soundOn, volume, setVolume, hintsOn, setHints } = useUiSettings()
 const volumeOpen = ref(false)
 
 function onVolumeInput(e: Event): void {
@@ -200,6 +200,8 @@ const panelTitle = computed(() => {
 
 // ---------- 下一步按键 ----------
 const highlight = computed(() => {
+  // 关闭按键提示时不显示下一步高亮
+  if (!hintsOn.value) return ''
   if (mode.value === 'zigen') return zigenQueue.value[zigenIndex.value]?.key ?? ''
   const s = session.value
   if (!s || s.finished) return ''
@@ -207,6 +209,14 @@ const highlight = computed(() => {
   if (!item) return ''
   if (s.input.length > 0 && item.shorts.includes(s.input)) return ' '
   return item.code[s.input.length] ?? ''
+})
+
+// 关闭按键提示时清除残留的高亮与常亮
+watch(hintsOn, (on) => {
+  if (!on) {
+    sticky.value = null
+    feedback.value = null
+  }
 })
 
 const currentHint = computed(() => {
@@ -333,7 +343,7 @@ function startIfNeeded(): void {
 function setFeedback(key: string, type: KeyFeedback['type'], keep = true): void {
   if (soundOn.value) playKeySound(type, volume.value)
   feedback.value = { key, type }
-  if (keep && type !== 'timeout' && stickyOn.value) sticky.value = { key, type }
+  if (keep && type !== 'timeout' && hintsOn.value) sticky.value = { key, type }
   if (fbTimer) window.clearTimeout(fbTimer)
   fbTimer = window.setTimeout(() => {
     feedback.value = null
@@ -517,10 +527,10 @@ onUnmounted(() => {
       <div class="controls">
         <button
           class="ctrl-btn"
-          :class="{ 'ctrl-btn--off': !stickyOn }"
-          @click="setSticky(!stickyOn)"
+          :class="{ 'ctrl-btn--off': !hintsOn }"
+          @click="setHints(!hintsOn)"
         >
-          {{ stickyOn ? '按键亮显：开' : '按键亮显：关' }}
+          {{ hintsOn ? '按键提示：开' : '按键提示：关' }}
         </button>
         <div class="volume">
           <button class="ctrl-btn" @click="volumeOpen = !volumeOpen">
