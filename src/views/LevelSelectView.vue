@@ -16,13 +16,8 @@ function pct(n: number): string {
   return `${Math.round(n * 100)}%`
 }
 
-function playable(level: LevelConfig): boolean {
-  return level.type !== 'article'
-}
-
 function go(level: LevelConfig): void {
-  if (!playable(level)) return
-  router.push(level.type === 'zigen' ? `/zigen/${level.id}` : `/practice/${level.id}`)
+  router.push(`/play/${level.id}`)
 }
 </script>
 
@@ -49,12 +44,12 @@ function go(level: LevelConfig): void {
           <button
             class="level__btn"
             :class="{ 'level__btn--passed': isLevelPassed(level.id) }"
-            :disabled="!isStageUnlocked(stage.id) || !playable(level)"
+            :disabled="!isStageUnlocked(stage.id)"
             @click="go(level)"
           >
             <span class="level__name">{{ level.title }}</span>
             <span class="level__meta">
-              {{ level.type === 'article' ? '文章模式开发中' : `≥ ${level.require.speed} · ${pct(level.require.accuracy)}` }}
+              ≥ {{ level.require.speed }} · {{ pct(level.require.accuracy) }}
             </span>
             <span class="level__best">
               <template v-if="levelResult(level.id)">

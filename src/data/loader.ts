@@ -1,4 +1,4 @@
-import type { CharEntry, ZigenItem } from '@/types'
+import type { Article, CharEntry, ZigenItem } from '@/types'
 
 /** 全量单字码表（动态懒加载 + 内存缓存） */
 let allCharsCache: Promise<Record<string, CharEntry>> | null = null
@@ -24,6 +24,19 @@ export function loadFreq1Chars(): Promise<Record<string, CharEntry>> {
     )
   }
   return freq1Cache
+}
+
+/** 公版文章库 */
+let articlesCache: Promise<Article[]> | null = null
+
+/** 懒加载文章库 */
+export function loadArticles(): Promise<Article[]> {
+  if (!articlesCache) {
+    articlesCache = import('./generated/articles.json').then(
+      (m) => m.default as unknown as Article[],
+    )
+  }
+  return articlesCache
 }
 
 /** 25 键字根表 */

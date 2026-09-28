@@ -3,18 +3,31 @@ import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-rou
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'level-select',
+    name: 'map',
     component: () => import('./views/LevelSelectView.vue'),
   },
   {
+    path: '/play/:id',
+    name: 'play',
+    component: () => import('./views/PlayView.vue'),
+  },
+  {
+    path: '/free',
+    name: 'free',
+    component: () => import('./views/FreeView.vue'),
+  },
+  {
+    path: '/settings',
+    name: 'settings',
+    component: () => import('./views/SettingsView.vue'),
+  },
+  {
     path: '/zigen/:id',
-    name: 'zigen',
-    component: () => import('./views/ZigenView.vue'),
+    redirect: (to) => `/play/${String(to.params.id)}`,
   },
   {
     path: '/practice/:id',
-    name: 'practice',
-    component: () => import('./views/PracticeView.vue'),
+    redirect: (to) => `/play/${String(to.params.id)}`,
   },
   {
     path: '/:pathMatch(.*)*',

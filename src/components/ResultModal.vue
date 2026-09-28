@@ -3,14 +3,19 @@ import { ref, watch } from 'vue'
 import type { MistakeOption } from '@/types'
 import MistakePicker from './MistakePicker.vue'
 
-const props = defineProps<{
-  visible: boolean
-  title: string
-  stats: { speed: number; accuracy: number; elapsedSec: number }
-  passed: boolean
-  requirement: { speed: number; accuracy: number }
-  options: MistakeOption[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    visible: boolean
+    title: string
+    stats: { speed: number; accuracy: number; elapsedSec: number }
+    passed: boolean
+    requirement: { speed: number; accuracy: number }
+    options: MistakeOption[]
+    /** 是否展示达标信息（自由模式隐藏） */
+    showPass?: boolean
+  }>(),
+  { showPass: true },
+)
 
 const emit = defineEmits<{
   (e: 'practice', ids: string[]): void
@@ -39,8 +44,12 @@ function onPractice(): void {
   <div v-if="visible" class="modal">
     <div class="modal__panel">
       <h2 class="modal__title">{{ title }}</h2>
-      <p class="modal__result" :class="passed ? 'modal__result--pass' : 'modal__result--fail'">
-        {{ passed ? '达标，已解锁下一关' : '未达标，可再练一次' }}
+      <p
+        v-if="props.showPass"
+        class="modal__result"
+        :class="passed ? 'modal__result--pass' : 'modal__result--fail'"
+      >
+        {{ passed ? '达标' : '未达标，可再练一次' }}
       </p>
 
       <dl class="modal__stats">
@@ -48,7 +57,7 @@ function onPractice(): void {
         <div><dt>正确率</dt><dd>{{ pct(stats.accuracy) }}</dd></div>
         <div><dt>用时</dt><dd>{{ stats.elapsedSec.toFixed(1) }} 秒</dd></div>
       </dl>
-      <p class="modal__req">
+      <p v-if="props.showPass" class="modal__req">
         达标要求：≥ {{ requirement.speed }} 字/分 · ≥ {{ pct(requirement.accuracy) }}
       </p>
 

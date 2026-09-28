@@ -11,7 +11,7 @@
  *   - chars.json            全量单字码表
  *   - chars.freq1.json      一级（通用规范一级 3500）常用字
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -191,6 +191,13 @@ function main(): void {
   // 字根表直接复制，供前端键盘图使用
   const zigen = readFileSync(resolve(SOURCES, 'zigen.json'), 'utf8')
   writeFileSync(resolve(OUT_DIR, 'zigen.json'), zigen, 'utf8')
+  // 文章库（R4.1 生成；缺失时输出空数组占位）
+  const articlesPath = resolve(SOURCES, 'articles.json')
+  writeFileSync(
+    resolve(OUT_DIR, 'articles.json'),
+    existsSync(articlesPath) ? readFileSync(articlesPath, 'utf8') : '[]',
+    'utf8',
+  )
 
   const total = Object.keys(entries).length
   const f1 = Object.keys(freq1).length
