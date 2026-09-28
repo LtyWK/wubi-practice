@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 import type { TextCharState } from '@/types'
+import { useUiSettings } from '@/composables/useUiSettings'
 
 const props = withDefaults(
   defineProps<{
@@ -12,6 +13,7 @@ const props = withDefaults(
   { title: '' },
 )
 
+const { align, setAlign } = useUiSettings()
 const box = ref<HTMLElement | null>(null)
 
 /** 当前字进入可视区时自动滚动 */
@@ -30,11 +32,30 @@ watch(
 
 <template>
   <div class="text-panel">
-    <div v-if="props.title" class="text-panel__head">
+    <div class="text-panel__head">
       <span class="text-panel__title">{{ props.title }}</span>
+      <span class="text-panel__align">
+        <button
+          class="align-btn"
+          :class="{ 'align-btn--active': align === 'center' }"
+          @click="setAlign('center')"
+        >
+          居中
+        </button>
+        <button
+          class="align-btn"
+          :class="{ 'align-btn--active': align === 'left' }"
+          @click="setAlign('left')"
+        >
+          左对齐
+        </button>
+      </span>
     </div>
     <div ref="box" class="text-panel__box">
-      <p class="text-panel__text">
+      <p
+        class="text-panel__text"
+        :class="align === 'center' ? 'text-panel__text--center' : 'text-panel__text--left'"
+      >
         <template v-for="(item, i) in props.items" :key="i">
           <br v-if="item.char === '\n'" />
           <span
@@ -61,17 +82,48 @@ watch(
 .text-panel__head {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: var(--space-3);
   margin-bottom: var(--space-2);
 }
 
 .text-panel__title {
   color: var(--color-text-muted);
   font-size: var(--font-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-panel__align {
+  flex: none;
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.align-btn {
+  padding: 2px 10px;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  cursor: pointer;
+}
+
+.align-btn + .align-btn {
+  border-left: 1px solid var(--color-border);
+}
+
+.align-btn--active {
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 .text-panel__box {
-  max-height: 34vh;
+  max-height: 36vh;
   min-height: 120px;
   overflow-y: auto;
   scrollbar-width: thin;
@@ -79,8 +131,17 @@ watch(
 
 .text-panel__text {
   font-size: 1.375rem;
-  line-height: 2.2;
+  line-height: 2.6;
+  letter-spacing: 0.1em;
   word-break: break-all;
+}
+
+.text-panel__text--center {
+  text-align: center;
+}
+
+.text-panel__text--left {
+  text-align: left;
 }
 
 .tp-char {
