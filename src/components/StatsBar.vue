@@ -75,7 +75,7 @@ function pct(n: number): string {
 }
 
 .stats__value--warn {
-  color: #b08a3e;
+  color: var(--color-warning);
 }
 
 .stats__unit {

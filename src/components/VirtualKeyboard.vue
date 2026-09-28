@@ -151,14 +151,6 @@ function keyClass(key: string): Record<string, boolean> {
   color: var(--color-primary);
 }
 
-.vk__key--sticky-ok .vk__short {
-  color: #3f7a58;
-}
-
-.vk__key--sticky-bad .vk__short {
-  color: #a05555;
-}
-
 .vk__letter {
   font-size: 1.0625rem;
   font-weight: 700;
@@ -187,7 +179,7 @@ function keyClass(key: string): Record<string, boolean> {
 }
 
 .vk__key--hint .vk__root {
-  color: #3b5f8a;
+  color: var(--key-hint-text);
 }
 
 @keyframes vk-breathe {
@@ -203,22 +195,30 @@ function keyClass(key: string): Record<string, boolean> {
 /* 常亮：最近一次输入结果 */
 .vk__key--sticky-ok {
   background: var(--color-success-weak);
-  border-color: #9cc9ae;
-  color: #3f7a58;
+  border-color: var(--sticky-ok-border);
+  color: var(--key-ok-text);
 }
 
 .vk__key--sticky-ok .vk__root {
-  color: #5e8f74;
+  color: var(--key-ok-root);
+}
+
+.vk__key--sticky-ok .vk__short {
+  color: var(--key-ok-text);
 }
 
 .vk__key--sticky-bad {
   background: var(--color-danger-weak);
-  border-color: #d3a1a1;
-  color: #a05555;
+  border-color: var(--sticky-bad-border);
+  color: var(--key-bad-text);
 }
 
 .vk__key--sticky-bad .vk__root {
-  color: #a86a6a;
+  color: var(--key-bad-root);
+}
+
+.vk__key--sticky-bad .vk__short {
+  color: var(--key-bad-text);
 }
 
 /* 瞬时闪烁 */
@@ -262,7 +262,7 @@ function keyClass(key: string): Record<string, boolean> {
 }
 
 .vk__key--muted {
-  background: #fafafa;
+  background: var(--key-muted-bg);
 }
 
 .vk__key--space {

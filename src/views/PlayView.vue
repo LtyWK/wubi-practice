@@ -14,7 +14,9 @@ import { buildDrillPool } from '@/engine/drill'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
 import { checkTimeout, elapsed, startChar, type CharTimer } from '@/engine/timer'
 import { ensureWubi86, wubi86 } from '@/schemes/wubi86'
+import { playKeySound } from '@/audio/sound'
 import { useFreeText } from '@/composables/useFreeText'
+import { useUiSettings } from '@/composables/useUiSettings'
 import { useLevels } from '@/composables/useLevels'
 import { useMistakes } from '@/composables/useMistakes'
 import { useSave } from '@/composables/useSave'
@@ -33,6 +35,7 @@ const { isStageUnlocked, recordResult } = useLevels()
 const { record, markMastered } = useMistakes()
 const { save, recordCharDone, recordCharError } = useSave()
 const { freeTitle, freeText } = useFreeText()
+const { soundOn } = useUiSettings()
 
 const levelId = computed(() => String(route.params.id))
 const isFree = computed(() => levelId.value === 'free')
@@ -319,6 +322,7 @@ function startIfNeeded(): void {
 }
 
 function setFeedback(key: string, type: KeyFeedback['type'], keep = true): void {
+  if (soundOn.value) playKeySound(type)
   feedback.value = { key, type }
   if (keep && type !== 'timeout') sticky.value = { key, type }
   if (fbTimer) window.clearTimeout(fbTimer)

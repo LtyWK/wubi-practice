@@ -177,7 +177,7 @@ function tip(level: LevelConfig): string {
 }
 
 .stage--locked .stage__badge {
-  background: #c6ccd4;
+  background: var(--color-locked);
 }
 
 .stage--done .stage__badge {
@@ -297,7 +297,7 @@ progress.stage__bar::-moz-progress-bar {
 }
 
 .card--passed {
-  border-color: #9cc9ae;
+  border-color: var(--sticky-ok-border);
   background: var(--color-success-weak);
 }
 
@@ -315,8 +315,8 @@ progress.stage__bar::-moz-progress-bar {
 }
 
 .card--passed .card__no {
-  background: #b7dcc4;
-  color: #3f7a58;
+  background: var(--color-success-weak);
+  color: var(--color-success);
 }
 
 .card__body {
