@@ -64,6 +64,13 @@ const ZHE = ['n', 'b', 'v', 'c', 'x']
 
 /**
  * V2 关卡体系：6 阶段 / 27 小关。
+ *
+ * 训练量设计依据（单次练习 1.5–3 分钟）：
+ * - 字根关：每个键位重复 8 次（单区 5 键 → 40 题；全键位 → 60–80 题）
+ * - 简码关：每个字重复 2–3 次（一级简码 25 字 → 30–40 题）
+ * - 常用字关：40 题（覆盖 20 字池的两轮）
+ * - 文章关：整篇连续输入（length 为参考字数）
+ *
  * 阶段内小关顺序自由；阶段内全部达标后解锁下一阶段。
  */
 export const STAGES: StageConfig[] = [
@@ -72,11 +79,11 @@ export const STAGES: StageConfig[] = [
     title: '字根启蒙',
     description: '逐区认识 25 个键位与键名字根',
     levels: [
-      zigen('s1-zigen-heng', '横区字根 G F D S A', HENG, 20, 4000, 15),
-      zigen('s1-zigen-shu', '竖区字根 H J K L M', SHU, 20, 4000, 15),
-      zigen('s1-zigen-pie', '撇区字根 T R E W Q', PIE, 20, 4000, 15),
-      zigen('s1-zigen-na', '捺区字根 Y U I O P', NA, 20, 4000, 15),
-      zigen('s1-zigen-zhe', '折区字根 N B V C X', ZHE, 20, 4000, 15),
+      zigen('s1-zigen-heng', '横区字根 G F D S A', HENG, 40, 4000, 15),
+      zigen('s1-zigen-shu', '竖区字根 H J K L M', SHU, 40, 4000, 15),
+      zigen('s1-zigen-pie', '撇区字根 T R E W Q', PIE, 40, 4000, 15),
+      zigen('s1-zigen-na', '捺区字根 Y U I O P', NA, 40, 4000, 15),
+      zigen('s1-zigen-zhe', '折区字根 N B V C X', ZHE, 40, 4000, 15),
     ],
   },
   {
@@ -84,9 +91,9 @@ export const STAGES: StageConfig[] = [
     title: '键位强化',
     description: '跨区混合，加快找键速度',
     levels: [
-      zigen('s2-mix-heng-shu', '横竖区混合', [...HENG, ...SHU], 25, 3000, 20),
-      zigen('s2-mix-pie-na', '撇捺区混合', [...PIE, ...NA], 25, 3000, 20),
-      zigen('s2-all-keys', '全键位综合', [...HENG, ...SHU, ...PIE, ...NA, ...ZHE], 30, 3000, 22),
+      zigen('s2-mix-heng-shu', '横竖区混合', [...HENG, ...SHU], 50, 3000, 20),
+      zigen('s2-mix-pie-na', '撇捺区混合', [...PIE, ...NA], 50, 3000, 20),
+      zigen('s2-all-keys', '全键位综合', [...HENG, ...SHU, ...PIE, ...NA, ...ZHE], 60, 3000, 22),
     ],
   },
   {
@@ -94,10 +101,10 @@ export const STAGES: StageConfig[] = [
     title: '简码入门',
     description: '一级简码与二级简码上屏',
     levels: [
-      danzi('s3-short1-a', '一级简码 G–M', 'short1', HENG.concat(SHU), 12, 5000, 20),
-      danzi('s3-short1-b', '一级简码 T–X', 'short1', [...PIE, ...NA, ...ZHE], 13, 5000, 20),
-      danzi('s3-short1-all', '一级简码混合', 'short1', undefined, 20, 5000, 22),
-      danzi('s3-short2-mix', '二级简码入门', 'short2', undefined, 20, 5000, 22),
+      danzi('s3-short1-a', '一级简码 G–M', 'short1', HENG.concat(SHU), 30, 5000, 20),
+      danzi('s3-short1-b', '一级简码 T–X', 'short1', [...PIE, ...NA, ...ZHE], 30, 5000, 20),
+      danzi('s3-short1-all', '一级简码混合', 'short1', undefined, 40, 5000, 22),
+      danzi('s3-short2-mix', '二级简码入门', 'short2', undefined, 40, 5000, 22),
     ],
   },
   {
@@ -105,11 +112,11 @@ export const STAGES: StageConfig[] = [
     title: '常用字攻坚',
     description: '二级简码分区精练与识别码专题',
     levels: [
-      danzi('s4-short2-heng-shu', '二级简码·横竖区', 'short2', HENG.concat(SHU), 20, 6000, 25),
-      danzi('s4-short2-pie-na-zhe', '二级简码·撇捺折区', 'short2', [...PIE, ...NA, ...ZHE], 20, 6000, 25),
-      danzi('s4-freq1-a', '常用字·横竖区', 'freq1', HENG.concat(SHU), 20, 6000, 20),
-      danzi('s4-freq1-b', '常用字·撇捺折区', 'freq1', [...PIE, ...NA, ...ZHE], 20, 6000, 20),
-      danzi('s4-freq1-idcode', '识别码专题', 'idcode', undefined, 20, 6000, 18, 0.8),
+      danzi('s4-short2-heng-shu', '二级简码·横竖区', 'short2', HENG.concat(SHU), 40, 6000, 25),
+      danzi('s4-short2-pie-na-zhe', '二级简码·撇捺折区', 'short2', [...PIE, ...NA, ...ZHE], 40, 6000, 25),
+      danzi('s4-freq1-a', '常用字·横竖区', 'freq1', HENG.concat(SHU), 40, 6000, 20),
+      danzi('s4-freq1-b', '常用字·撇捺折区', 'freq1', [...PIE, ...NA, ...ZHE], 40, 6000, 20),
+      danzi('s4-freq1-idcode', '识别码专题', 'idcode', undefined, 40, 6000, 18, 0.8),
     ],
   },
   {
@@ -119,9 +126,9 @@ export const STAGES: StageConfig[] = [
     levels: [
       article('s5-poem-5', '五言绝句', ['jingyesi', 'dengguanquelou'], 40, 8000, 30, 0.9),
       article('s5-poem-7', '七言绝句', ['zaofabaidicheng', 'shanxing'], 56, 8000, 32, 0.9),
-      article('s5-ci', '宋词一首', ['shuidiaogetou'], 110, 8000, 32, 0.88),
-      article('s5-gu-wen', '古文短篇', ['loushiming', 'ailianshuo'], 160, 8000, 30, 0.88),
-      article('s5-essay', '现代散文节选', ['chun'], 200, 8000, 35, 0.85),
+      article('s5-ci', '宋词一首', ['shuidiaogetou'], 95, 8000, 32, 0.88),
+      article('s5-gu-wen', '古文短篇', ['loushiming', 'ailianshuo'], 200, 8000, 30, 0.88),
+      article('s5-essay', '现代散文节选', ['chun'], 166, 8000, 35, 0.85),
     ],
   },
   {
@@ -129,11 +136,11 @@ export const STAGES: StageConfig[] = [
     title: '综合挑战',
     description: '限时与低容错的终极考验',
     levels: [
-      zigen('s6-challenge-zigen', '字根极速', [...HENG, ...SHU, ...PIE, ...NA, ...ZHE], 40, 2500, 30, 0.92),
-      danzi('s6-challenge-short', '简码极速', 'short2', undefined, 30, 4000, 30, 0.92),
-      danzi('s6-challenge-freq', '常用字长跑', 'freq1', undefined, 40, 5000, 28, 0.9),
-      article('s6-challenge-article', '文章耐力', ['yueyanglou'], 250, 7000, 35, 0.9),
-      danzi('s6-final', '毕业测试·常用字', 'freq1', undefined, 40, 4500, 30, 0.92),
+      zigen('s6-challenge-zigen', '字根极速', [...HENG, ...SHU, ...PIE, ...NA, ...ZHE], 80, 2500, 30, 0.92),
+      danzi('s6-challenge-short', '简码极速', 'short2', undefined, 60, 4000, 30, 0.92),
+      danzi('s6-challenge-freq', '常用字长跑', 'freq1', undefined, 60, 5000, 28, 0.9),
+      article('s6-challenge-article', '文章耐力', ['yueyanglou'], 178, 7000, 35, 0.9),
+      danzi('s6-final', '毕业测试·常用字', 'freq1', undefined, 60, 4500, 30, 0.92),
     ],
   },
 ]
