@@ -65,9 +65,9 @@ const BASE_VOLUME: Record<SoundKind, number> = {
 /**
  * 播放按键反馈音。
  * @param kind 反馈类型（正确 / 错误 / 超时）
- * @param volume 音量系数 0-1（默认 0.7）
+ * @param volume 音量系数 0-1（默认 1）
  */
-export function playKeySound(kind: SoundKind, volume = 0.7): void {
+export function playKeySound(kind: SoundKind, volume = 1): void {
   const v = Math.min(1, Math.max(0, volume))
   if (v <= 0) return
   const gain = BASE_VOLUME[kind] * v

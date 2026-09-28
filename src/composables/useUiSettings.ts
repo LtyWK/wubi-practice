@@ -11,7 +11,7 @@ const SOUND_KEY = 'wubi.ui.sound'
 const VOLUME_KEY = 'wubi.ui.volume'
 
 /** 默认音量（0-1） */
-const DEFAULT_VOLUME = 0.7
+const DEFAULT_VOLUME = 1
 
 function read(key: string): string | null {
   try {
