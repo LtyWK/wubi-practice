@@ -1,4 +1,4 @@
-import type { CharEntry } from '@/types'
+import type { CharEntry, ZigenItem } from '@/types'
 
 /** 全量单字码表（动态懒加载 + 内存缓存） */
 let allCharsCache: Promise<Record<string, CharEntry>> | null = null
@@ -24,4 +24,17 @@ export function loadFreq1Chars(): Promise<Record<string, CharEntry>> {
     )
   }
   return freq1Cache
+}
+
+/** 25 键字根表 */
+let zigenCache: Promise<ZigenItem[]> | null = null
+
+/** 懒加载字根表 */
+export function loadZigen(): Promise<ZigenItem[]> {
+  if (!zigenCache) {
+    zigenCache = import('./generated/zigen.json').then(
+      (m) => m.default as unknown as ZigenItem[],
+    )
+  }
+  return zigenCache
 }

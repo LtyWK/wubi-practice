@@ -21,10 +21,26 @@ export interface LevelConfig {
   pool: string[]
   /** danzi 出题池 */
   source?: 'short1' | 'short2' | 'freq1'
+  /** danzi 出题首码过滤（可选，用于按区分关） */
+  starts?: string[]
   /** 出题数量 */
   length: number
   /** 达标要求 */
   require: { speed: number; accuracy: number }
+}
+
+/** 字根表条目（scripts/sources/zigen.json） */
+export interface ZigenItem {
+  /** 键位，如 "g" */
+  key: string
+  /** 键名字根，如 "王" */
+  name: string
+  /** 分区：横/竖/撇/捺/折 */
+  area: string
+  /** 助记口诀 */
+  mnemonic: string
+  /** 该键位字根列表 */
+  radicals: string[]
 }
 
 /** 进度数据 */

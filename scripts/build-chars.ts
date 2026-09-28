@@ -178,6 +178,9 @@ function main(): void {
   mkdirSync(OUT_DIR, { recursive: true })
   writeFileSync(resolve(OUT_DIR, 'chars.json'), JSON.stringify(entries), 'utf8')
   writeFileSync(resolve(OUT_DIR, 'chars.freq1.json'), JSON.stringify(freq1), 'utf8')
+  // 字根表直接复制，供前端键盘图使用
+  const zigen = readFileSync(resolve(SOURCES, 'zigen.json'), 'utf8')
+  writeFileSync(resolve(OUT_DIR, 'zigen.json'), zigen, 'utf8')
 
   const total = Object.keys(entries).length
   const f1 = Object.keys(freq1).length
