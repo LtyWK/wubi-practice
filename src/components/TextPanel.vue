@@ -1,35 +1,51 @@
 <script setup lang="ts">
+import { nextTick, ref, watch } from 'vue'
 import type { TextCharState } from '@/types'
 
 const props = withDefaults(
   defineProps<{
-    /** 待显示字符序列及状态 */
+    /** 待显示字符序列及状态（全量展示，容器内滚动） */
     items: { char: string; state: TextCharState }[]
-    /** 批次信息（单字/字根） */
-    batch?: { index: number; total: number }
-    /** 面板标题（文章名等） */
+    /** 面板标题（文章名 / 关卡名） */
     title?: string
   }>(),
-  { title: '', batch: undefined },
+  { title: '' },
+)
+
+const box = ref<HTMLElement | null>(null)
+
+/** 当前字进入可视区时自动滚动 */
+watch(
+  () => props.items.findIndex((item) => item.state === 'active'),
+  async (index) => {
+    if (index < 0) return
+    await nextTick()
+    const el = box.value?.querySelector<HTMLElement>(`.tp-char[data-index="${index}"]`)
+    if (el && typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  },
 )
 </script>
 
 <template>
   <div class="text-panel">
-    <div v-if="props.title || props.batch" class="text-panel__head">
+    <div v-if="props.title" class="text-panel__head">
       <span class="text-panel__title">{{ props.title }}</span>
-      <span v-if="props.batch" class="text-panel__batch">
-        第 {{ props.batch.index }}/{{ props.batch.total }} 批
-      </span>
     </div>
-    <p class="text-panel__text">
-      <template v-for="(item, i) in props.items" :key="i">
-        <br v-if="item.char === '\n'" />
-        <span v-else class="tp-char" :class="`tp-char--${item.state}`">
-          {{ item.char }}
-        </span>
-      </template>
-    </p>
+    <div ref="box" class="text-panel__box">
+      <p class="text-panel__text">
+        <template v-for="(item, i) in props.items" :key="i">
+          <br v-if="item.char === '\n'" />
+          <span
+            v-else
+            class="tp-char"
+            :data-index="i"
+            :class="`tp-char--${item.state}`"
+          >{{ item.char }}</span>
+        </template>
+      </p>
+    </div>
   </div>
 </template>
 
@@ -38,7 +54,7 @@ const props = withDefaults(
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-5) var(--space-6);
+  padding: var(--space-4) var(--space-6) var(--space-5);
   box-shadow: var(--shadow-sm);
 }
 
@@ -46,7 +62,7 @@ const props = withDefaults(
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .text-panel__title {
@@ -54,15 +70,16 @@ const props = withDefaults(
   font-size: var(--font-sm);
 }
 
-.text-panel__batch {
-  color: var(--color-primary);
-  font-size: var(--font-sm);
-  font-weight: 600;
+.text-panel__box {
+  max-height: 34vh;
+  min-height: 120px;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .text-panel__text {
-  font-size: var(--font-xl);
-  line-height: 2;
+  font-size: 1.375rem;
+  line-height: 2.2;
   word-break: break-all;
 }
 

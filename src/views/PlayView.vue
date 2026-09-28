@@ -40,8 +40,16 @@ const level = computed<LevelConfig | undefined>(() =>
 )
 const isZigen = computed(() => level.value?.type === 'zigen')
 const mode = computed<'zigen' | 'text'>(() => (isZigen.value ? 'zigen' : 'text'))
-const batchSize = computed(() => level.value?.batchSize ?? 20)
 const articleMode = computed(() => level.value?.type === 'article' || isFree.value)
+
+/** 键盘按键上显示的字根（取每键前 3 个） */
+const keyRoots = computed<Record<string, string>>(() => {
+  const out: Record<string, string> = {}
+  for (const [key, item] of Object.entries(zigenMap.value)) {
+    out[key] = item.radicals.slice(0, 3).join(' ')
+  }
+  return out
+})
 
 // ---------- 通用状态 ----------
 const now = ref(Date.now())
@@ -96,44 +104,28 @@ const stats = computed(() => {
 })
 const unit = computed(() => (isZigen.value ? '键/分' : '字/分'))
 
-// ---------- 进度与批次 ----------
-const batch = computed<{ index: number; total: number } | undefined>(() => {
-  if (articleMode.value) return undefined
-  const total = Math.ceil(totalCount.value / batchSize.value)
-  if (total <= 1) return undefined
-  const index = Math.min(Math.floor(doneCount.value / batchSize.value) + 1, total)
-  return { index, total }
-})
-
+// ---------- 文本展示 ----------
 function stateOf(state: string, wrong: boolean): TextCharState {
   if (state === 'done') return wrong ? 'done-wrong' : 'done-clean'
   return state === 'active' ? 'active' : 'pending'
 }
 
-const zigenItems = computed<{ char: string; state: TextCharState }[]>(() => {
-  const start = batch.value ? (batch.value.index - 1) * batchSize.value : 0
-  const end = Math.min(start + batchSize.value, zigenQueue.value.length)
-  const out: { char: string; state: TextCharState }[] = []
-  for (let i = start; i < end; i += 1) {
-    const key = zigenQueue.value[i]
+const zigenItems = computed<{ char: string; state: TextCharState }[]>(() =>
+  zigenQueue.value.map((key, i) => {
     const name = zigenMap.value[key]?.name ?? key.toUpperCase()
     let state: TextCharState = 'pending'
     if (i < zigenIndex.value) state = zigenWrong.value[i] ? 'done-wrong' : 'done-clean'
     else if (i === zigenIndex.value) state = 'active'
-    out.push({ char: name, state })
-  }
-  return out
-})
+    return { char: name, state }
+  }),
+)
 
-const danziItems = computed<{ char: string; state: TextCharState }[]>(() => {
-  const s = session.value
-  if (!s) return []
-  const start = batch.value ? (batch.value.index - 1) * batchSize.value : 0
-  const end = Math.min(start + batchSize.value, s.items.length)
-  return s.items
-    .slice(start, end)
-    .map((it) => ({ char: it.char, state: stateOf(it.state, it.wrongAttempts.length > 0) }))
-})
+const danziItems = computed<{ char: string; state: TextCharState }[]>(() =>
+  (session.value?.items ?? []).map((it) => ({
+    char: it.char,
+    state: stateOf(it.state, it.wrongAttempts.length > 0),
+  })),
+)
 
 const articleItems = computed<{ char: string; state: TextCharState }[]>(() => {
   const s = session.value
@@ -470,7 +462,7 @@ onUnmounted(() => {
       :unit="unit"
     />
 
-    <TextPanel :items="textItems" :batch="batch" :title="panelTitle" />
+    <TextPanel :items="textItems" :title="panelTitle" />
 
     <CodeHint
       v-if="currentHint"
@@ -484,6 +476,7 @@ onUnmounted(() => {
       :highlight="highlight"
       :feedback="feedback"
       :sticky="sticky"
+      :key-roots="keyRoots"
       :disabled="finished"
     />
 
@@ -503,10 +496,10 @@ onUnmounted(() => {
 
 <style scoped>
 .play {
-  max-width: 960px;
+  max-width: 1000px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 </style>

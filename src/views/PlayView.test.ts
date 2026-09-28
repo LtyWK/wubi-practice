@@ -29,20 +29,20 @@ describe('PlayView 字根模式', () => {
     expect(wrapper.findAll('.vk__key')).toHaveLength(27)
     expect(wrapper.findAll('.tp-char').length).toBeGreaterThan(0)
 
-    const hint = wrapper.find('.vk__key--hint')
+    const hint = wrapper.find('.vk__key--hint .vk__letter')
     expect(hint.exists()).toBe(true)
     pressKey(hint.text().toLowerCase())
     await nextTick()
 
     expect(wrapper.find('.tp-char--done-clean').exists()).toBe(true)
-    expect(wrapper.find('.stats').text()).toContain('1/20')
+    expect(wrapper.find('.stats').text()).toContain('1/40')
   })
 
   it('按错键提示错误，完成后该字标记红色', async () => {
     const wrapper = mount(PlayView)
     await waitUntil(() => wrapper.findAll('.tp-char').length > 0)
 
-    const hint = wrapper.find('.vk__key--hint')
+    const hint = wrapper.find('.vk__key--hint .vk__letter')
     const right = hint.text().toLowerCase()
     const wrong = right === 'z' ? 'x' : 'z'
 
