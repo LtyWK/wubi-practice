@@ -93,9 +93,7 @@ watch(
   font-size: var(--font-base);
   font-weight: 600;
   text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal; /* 标题过长时自动换行 */
   max-width: 70%;
 }
 

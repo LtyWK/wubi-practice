@@ -6,6 +6,8 @@
 export type SoundKind = 'ok' | 'bad' | 'timeout'
 
 let ctx: AudioContext | null = null
+/** 主输出压缩器：允许更高音量而不削波 */
+let master: DynamicsCompressorNode | null = null
 
 type AudioContextCtor = typeof AudioContext
 
@@ -20,6 +22,13 @@ function ensureContext(): AudioContext | null {
   if (!ctx) {
     try {
       ctx = new Ctor()
+      master = ctx.createDynamicsCompressor()
+      master.threshold.value = -10
+      master.knee.value = 20
+      master.ratio.value = 12
+      master.attack.value = 0.002
+      master.release.value = 0.15
+      master.connect(ctx.destination)
     } catch {
       return null
     }
@@ -47,7 +56,7 @@ function tone(
     gain.gain.linearRampToValueAtTime(volume, t0 + 0.005)
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durationMs / 1000)
     osc.connect(gain)
-    gain.connect(c.destination)
+    gain.connect(master ?? c.destination)
     osc.start(t0)
     osc.stop(t0 + durationMs / 1000 + 0.03)
   } catch {
@@ -55,11 +64,11 @@ function tone(
   }
 }
 
-/** 基准音量（再乘以用户音量系数） */
+/** 基准音量（再乘以用户音量系数）；已按反馈整体提高约 2.5 倍 */
 const BASE_VOLUME: Record<SoundKind, number> = {
-  ok: 0.1,
-  bad: 0.2,
-  timeout: 0.12,
+  ok: 0.25,
+  bad: 0.5,
+  timeout: 0.28,
 }
 
 /**

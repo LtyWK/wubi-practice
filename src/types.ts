@@ -58,19 +58,23 @@ export interface Article {
   paragraphs: string[]
 }
 
-/** 字根表条目（scripts/sources/zigen.json） */
+/** 字根表条目（由 zigen.json 的口诀/注释 + zigen-glyphs.json 的字形合并生成） */
 export interface ZigenItem {
   /** 键位，如 "g" */
   key: string
-  /** 键名字根，如 "王" */
+  /** 键名字根（键盘左上角） */
   name: string
+  /** 一级简码（键盘右上角） */
+  short1: string
+  /** 键盘主体字形（≤15，不含键名，相似相邻） */
+  glyphs: string[]
+  /** 完整字形（打字训练用） */
+  all: string[]
   /** 分区：横/竖/撇/捺/折 */
   area: string
   /** 助记口诀 */
   mnemonic: string
-  /** 该键位字根列表 */
-  radicals: string[]
-  /** 需要注释说明的字根（字形无法用字符精确表达等） */
+  /** 字形注释（如 革字底、青字头） */
   notes?: { root: string; note: string }[]
 }
 

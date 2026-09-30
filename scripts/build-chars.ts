@@ -136,14 +136,21 @@ function pickCode(codes: Map<string, number> | undefined, fallback: string): str
   return fallback
 }
 
-/** 字根表配置（权威字根表：键名/口诀/分区/字根列表/注释，人工定稿） */
-interface ZigenConfig {
+/** 字根表元数据（键名/口诀/分区/注释，scripts/sources/zigen.json） */
+interface ZigenMeta {
   key: string
   name: string
   area: string
   mnemonic: string
-  radicals: string[]
   notes?: { root: string; note: string }[]
+}
+
+/** 键位字形配置（scripts/sources/zigen-glyphs.json） */
+interface ZigenGlyphEntry {
+  name: string
+  short1: string
+  glyphs: string[]
+  all: string[]
 }
 
 function main(): void {
@@ -208,27 +215,49 @@ function main(): void {
   mkdirSync(OUT_DIR, { recursive: true })
   writeFileSync(resolve(OUT_DIR, 'chars.json'), JSON.stringify(entries), 'utf8')
   writeFileSync(resolve(OUT_DIR, 'chars.freq1.json'), JSON.stringify(freq1), 'utf8')
-  // 字根表：直接采用权威配置（scripts/sources/zigen.json，人工定稿）
-  const zigenConfig = JSON.parse(
+  // 字根表：口诀/注释（zigen.json）+ 字形（zigen-glyphs.json）合并输出
+  const zigenMeta = JSON.parse(
     readFileSync(resolve(SOURCES, 'zigen.json'), 'utf8'),
-  ) as ZigenConfig[]
-  writeFileSync(resolve(OUT_DIR, 'zigen.json'), JSON.stringify(zigenConfig), 'utf8')
+  ) as ZigenMeta[]
+  const zigenGlyphs = JSON.parse(
+    readFileSync(resolve(SOURCES, 'zigen-glyphs.json'), 'utf8'),
+  ) as Record<string, ZigenGlyphEntry>
+  const zigenOut = zigenMeta.map((meta) => {
+    const glyphs = zigenGlyphs[meta.key] ?? {
+      name: meta.name,
+      short1: '',
+      glyphs: [],
+      all: [],
+    }
+    return {
+      key: meta.key,
+      ...glyphs,
+      area: meta.area,
+      mnemonic: meta.mnemonic,
+      notes: meta.notes,
+    }
+  })
+  writeFileSync(resolve(OUT_DIR, 'zigen.json'), JSON.stringify(zigenOut), 'utf8')
 
-  // 一致性校验：拆解数据里 PUA 映射出的字根名，是否在对应键位的标准字根表内
-  const standardByKey = new Map<string, Set<string>>()
-  for (const item of zigenConfig) standardByKey.set(item.key, new Set(item.radicals))
+  // 一致性校验：拆解数据中每个非识别码 PUA 的主键位，其字形应出现在该键的 all 中
+  const IDENT_PUA = new Set([
+    'E000', 'E015', 'E02D', 'E06A', 'E080', 'E097',
+    'E0CD', 'E0DF', 'E0F4', 'E13D', 'E155', 'E171',
+    'E1AD', 'E1DF', 'E1FA',
+  ])
+  const allByKey = new Map<string, Set<string>>()
+  for (const item of zigenOut) allByKey.set(item.key, new Set(item.all))
   const mismatches = new Set<string>()
   for (const [pua, keys] of puaKeyFreq) {
+    if (IDENT_PUA.has(pua)) continue
     const mainKey = [...keys.entries()].sort((a, b) => b[1] - a[1])[0][0]
-    const name = rootsMap.get(pua) ?? KEY_ROOT[mainKey] ?? mainKey
-    if (!standardByKey.get(mainKey)?.has(name)) {
-      mismatches.add(`${mainKey.toUpperCase()}:${name}`)
+    const glyph = String.fromCodePoint(parseInt(pua, 16))
+    if (!allByKey.get(mainKey)?.has(glyph)) {
+      mismatches.add(`${mainKey.toUpperCase()}:U+${pua}`)
     }
   }
   if (mismatches.size > 0) {
-    console.log(
-      `[build-chars] 拆解映射与标准表不一致 ${mismatches.size} 处（供人工核对，不影响字根表）：`,
-    )
+    console.log(`[build-chars] 字形归并与拆解数据不一致 ${mismatches.size} 处：`)
     console.log('  ' + [...mismatches].join('  '))
   }
   // 文章库（R4.1 生成；缺失时输出空数组占位）

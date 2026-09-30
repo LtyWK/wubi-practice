@@ -6,4 +6,6 @@ dist-ssr
 .vite
 coverage
 src/data/generated
+.opencode
+.archify
 *.log

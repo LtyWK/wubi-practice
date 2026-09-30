@@ -8,7 +8,6 @@ import TextPanel from '@/components/TextPanel.vue'
 import VirtualKeyboard from '@/components/VirtualKeyboard.vue'
 import { loadArticles, loadZigen } from '@/data/loader'
 import { buildPool, isHan, sample } from '@/data/pool'
-import { LEVEL1_CHARS } from '@/data/short1'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
@@ -55,11 +54,29 @@ const isZigen = computed(() => level.value?.type === 'zigen')
 const mode = computed<'zigen' | 'text'>(() => (isZigen.value ? 'zigen' : 'text'))
 const articleMode = computed(() => level.value?.type === 'article' || isFree.value)
 
-/** 键盘按键上显示的完整字根表 */
+/** 键盘主体字形（每键 ≤15 个） */
 const keyRoots = computed<Record<string, string[]>>(() => {
   const out: Record<string, string[]> = {}
   for (const [key, item] of Object.entries(zigenMap.value)) {
-    out[key] = item.radicals
+    out[key] = item.glyphs
+  }
+  return out
+})
+
+/** 键名字根（键盘左上角） */
+const keyNames = computed<Record<string, string>>(() => {
+  const out: Record<string, string> = {}
+  for (const [key, item] of Object.entries(zigenMap.value)) {
+    out[key] = item.name
+  }
+  return out
+})
+
+/** 一级简码（键盘右上角） */
+const keyShorts = computed<Record<string, string>>(() => {
+  const out: Record<string, string> = {}
+  for (const [key, item] of Object.entries(zigenMap.value)) {
+    out[key] = item.short1
   }
   return out
 })
@@ -145,7 +162,8 @@ function makeZigenTasks(pool: string[], count: number): ZigenTask[] {
   const out: ZigenTask[] = []
   for (let i = 0; i < count; i += 1) {
     const key = pool[Math.floor(Math.random() * pool.length)]
-    const roots = zigenMap.value[key]?.radicals ?? []
+    // 打字训练使用完整字形（all）
+    const roots = zigenMap.value[key]?.all ?? []
     const root =
       roots.length > 0 ? roots[Math.floor(Math.random() * roots.length)] : key.toUpperCase()
     out.push({ key, root })
@@ -462,11 +480,8 @@ function closeResult(): void {
 }
 
 // ---------- 生命周期 ----------
-onMounted(async () => {
-  await ensureWubi86()
-  const zigenData = await loadZigen()
-  zigenMap.value = Object.fromEntries(zigenData.map((z) => [z.key, z]))
-
+/** 开启本关一局（首次进入与「重新开始」共用） */
+async function startRound(): Promise<void> {
   if (isFree.value) {
     if (!freeText.value) {
       router.replace('/free')
@@ -474,29 +489,41 @@ onMounted(async () => {
     }
     articleTitle.value = freeTitle.value || '自由练习'
     const text = freeText.value
-    const chars = [...text].filter(isHan)
-    initText(chars)
+    initText([...text].filter(isHan))
     buildDisplay(text)
+    return
+  }
+  const lv = level.value
+  if (!lv) return
+  if (lv.type === 'zigen') {
+    initZigen(makeZigenTasks(lv.pool, lv.length))
+  } else if (lv.type === 'article') {
+    await initArticle(lv)
   } else {
+    const pool = await buildPool(lv)
+    initText(sample(pool, lv.length))
+  }
+}
+
+/** 重新开始本关（重新抽题，开新一轮） */
+function restart(): void {
+  void startRound()
+}
+
+onMounted(async () => {
+  await ensureWubi86()
+  const zigenData = await loadZigen()
+  zigenMap.value = Object.fromEntries(zigenData.map((z) => [z.key, z]))
+
+  if (!isFree.value) {
     const lv = level.value
-    if (!lv) {
+    const stageId = lv ? (stageOfLevel(lv.id)?.id ?? '') : ''
+    if (!lv || !isStageUnlocked(stageId)) {
       router.replace('/')
       return
-    }
-    const stageId = stageOfLevel(lv.id)?.id ?? ''
-    if (!isStageUnlocked(stageId)) {
-      router.replace('/')
-      return
-    }
-    if (lv.type === 'zigen') {
-      initZigen(makeZigenTasks(lv.pool, lv.length))
-    } else if (lv.type === 'article') {
-      await initArticle(lv)
-    } else {
-      const pool = await buildPool(lv)
-      initText(sample(pool, lv.length))
     }
   }
+  await startRound()
 
   window.addEventListener('keydown', onKeydown)
   tickTimer = window.setInterval(() => {
@@ -537,6 +564,7 @@ onUnmounted(() => {
 
     <div class="keyboard-wrap">
       <div class="controls">
+        <button class="ctrl-btn" @click="restart">重新开始</button>
         <button
           class="ctrl-btn"
           :class="{ 'ctrl-btn--off': !hintsOn }"
@@ -567,8 +595,9 @@ onUnmounted(() => {
         :highlight="highlight"
         :feedback="feedback"
         :sticky="sticky"
+        :names="keyNames"
         :roots="keyRoots"
-        :short1="LEVEL1_CHARS"
+        :short1="keyShorts"
         :disabled="finished"
       />
       <p v-if="rootNotes.length > 0" class="root-notes">

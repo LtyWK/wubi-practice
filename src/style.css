@@ -1,3 +1,14 @@
+/*
+ * 字根字形字体：仅覆盖私有区（PUA），用于无法用汉字表示的变体字根
+ * （如 F 键「革字底」）。unicode-range 确保只对 PUA 字符生效。
+ */
+@font-face {
+  font-family: 'WubiRoots';
+  src: url('./assets/fonts/wubi-roots.ttf') format('truetype');
+  unicode-range: U+E000-F8FF;
+  font-display: swap;
+}
+
 :root {
   --color-bg: #f5f6f8;
   --color-surface: #ffffff;
@@ -172,6 +183,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family:
+    'WubiRoots',
     system-ui,
     -apple-system,
     'Segoe UI',

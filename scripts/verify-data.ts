@@ -21,7 +21,9 @@ interface CharEntry {
 interface ZigenItem {
   key: string
   name: string
-  radicals: string[]
+  short1: string
+  glyphs: string[]
+  all: string[]
   notes?: { root: string; note: string }[]
 }
 
@@ -53,11 +55,11 @@ function readJson<T>(path: string): T {
 
 function main(): void {
   const chars = readJson<Record<string, CharEntry>>(GEN)
-  const zigen = readJson<ZigenItem[]>(resolve(SOURCES, 'zigen.json'))
+  const zigen = readJson<ZigenItem[]>(resolve(ROOT, 'src/data/generated/zigen.json'))
   const rootsMap = readJson<Record<string, string>>(resolve(SOURCES, 'roots-map.json'))
 
   const validRoots = new Set<string>(Object.values(KEY_ROOT))
-  for (const z of zigen) for (const r of z.radicals) validRoots.add(r)
+  for (const z of zigen) for (const g of z.all) validRoots.add(g)
   for (const [k, v] of Object.entries(rootsMap)) if (!k.startsWith('_')) validRoots.add(v)
 
   const total = Object.keys(chars).length
@@ -109,13 +111,13 @@ function main(): void {
   console.log(`③ 一级简码 25 字：${level1Ok ? '通过' : '不一致'}`)
   if (!level1Ok) console.log('   实际：', JSON.stringify(found))
 
-  // 校验④ 字根表完整性：25 键，每键 2-14 个字根（K 键仅「口川」2 个）
+  // 校验④ 字根表完整性：25 键；键盘主体 ≤15；all 覆盖主体
   const zigenIssues: string[] = []
   if (zigen.length !== 25) zigenIssues.push(`键位数 ${zigen.length}（要求 25）`)
   for (const z of zigen) {
-    if (z.radicals.length < 2 || z.radicals.length > 14) {
-      zigenIssues.push(`${z.key}:${z.radicals.length}`)
-    }
+    if (z.glyphs.length > 15) zigenIssues.push(`${z.key}:主体${z.glyphs.length}`)
+    if (z.all.length < z.glyphs.length) zigenIssues.push(`${z.key}:all<主体`)
+    if (!z.name || !z.short1) zigenIssues.push(`${z.key}:缺键名/简码`)
   }
   const zigenOk = zigenIssues.length === 0
   console.log(`④ 字根表完整性：${zigenOk ? '通过' : `异常（${zigenIssues.join(' ')}）`}`)
