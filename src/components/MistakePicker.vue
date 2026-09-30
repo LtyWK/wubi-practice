@@ -14,10 +14,12 @@ const selected = ref<string[]>([])
 
 watch(
   () => props.options,
-  () => {
-    selected.value = []
-    emit('update:selected', [])
+  (opts) => {
+    // 默认全部勾选
+    selected.value = opts.map((o) => o.id)
+    emit('update:selected', [...selected.value])
   },
+  { immediate: true },
 )
 
 const allChecked = computed(

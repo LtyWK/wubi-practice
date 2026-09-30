@@ -28,6 +28,9 @@ import type {
   ZigenItem,
 } from '@/types'
 
+/** 加练：每个错项的重复次数（总字数 = 错项数 × 该值） */
+const DRILL_REPEAT = 10
+
 const route = useRoute()
 const router = useRouter()
 const { isStageUnlocked, recordResult } = useLevels()
@@ -453,7 +456,7 @@ function onPractice(ids: string[]): void {
   if (mode.value === 'zigen') {
     const tasks: ZigenTask[] = []
     for (const key of ids) {
-      tasks.push(...makeZigenTasks([key, key, key], 3))
+      tasks.push(...makeZigenTasks([key], DRILL_REPEAT))
     }
     tasks.sort(() => Math.random() - 0.5)
     initZigen(tasks, true)
@@ -461,7 +464,7 @@ function onPractice(ids: string[]): void {
   }
   const repeated: string[] = []
   for (const id of ids) {
-    for (let i = 0; i < 3; i += 1) repeated.push(id)
+    for (let i = 0; i < DRILL_REPEAT; i += 1) repeated.push(id)
   }
   repeated.sort(() => Math.random() - 0.5)
   initText(repeated, true)

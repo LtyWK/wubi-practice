@@ -27,7 +27,8 @@ const selected = ref<string[]>([])
 watch(
   () => props.visible,
   (v) => {
-    if (v) selected.value = []
+    // 打开结算时默认全选错误项
+    if (v) selected.value = props.options.map((o) => o.id)
   },
 )
 
