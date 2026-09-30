@@ -58,9 +58,8 @@ describe('PlayView 字根模式', () => {
 
 describe('PlayView 单字模式', () => {
   it('显示编码提示，按全码可完成当前字', async () => {
-    routeRef.params.id = 's3-short1-a'
+    routeRef.params.id = 's2-short1-a'
     unlockStage('s2')
-    unlockStage('s3')
 
     const wrapper = mount(PlayView)
     await waitUntil(() => wrapper.find('.hint__code').exists())
