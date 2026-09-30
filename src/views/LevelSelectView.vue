@@ -253,7 +253,7 @@ progress.stage__bar::-moz-progress-bar {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: var(--space-3);
 }
 
@@ -349,5 +349,35 @@ progress.stage__bar::-moz-progress-bar {
 
 .card--passed .card__badge {
   color: var(--color-success);
+}
+
+/* 窄屏：单列卡片，压缩阶段留白与徽标，避免横向溢出 */
+@media (max-width: 640px) {
+  .stage {
+    gap: var(--space-3);
+  }
+
+  .stage__badge {
+    width: 34px;
+    height: 34px;
+    font-size: var(--font-sm);
+  }
+
+  .stage:not(:last-child)::after {
+    left: 16px;
+    top: 34px;
+  }
+
+  .stage__body {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .levels {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: var(--space-3);
+  }
 }
 </style>
