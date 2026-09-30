@@ -49,7 +49,11 @@ function main(): void {
   const stagesSource = readFileSync(resolve(ROOT, 'src/data/stages.ts'), 'utf8')
   const referenced = [...stagesSource.matchAll(/'([a-z0-9-]+)'/g)]
     .map((m) => m[1])
-    .filter((id) => /^(tangshi-5|tangshi-7|songci|guwen|xiandai|yueyanglou)$/.test(id))
+    .filter((id) =>
+      /^(tangshi-5|tangshi-7|songci|guwen|xiandai|yueyanglou|zfgzbg-2024|zfgzbg-2025|zfgzbg-2025-task)$/.test(
+        id,
+      ),
+    )
   for (const id of referenced) {
     if (!ids.has(id)) errors.push(`stages 引用不存在：${id}`)
   }

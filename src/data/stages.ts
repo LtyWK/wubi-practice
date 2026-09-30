@@ -64,7 +64,7 @@ const ZHE = ['n', 'b', 'v', 'c', 'x']
 const ALL_KEYS = [...HENG, ...SHU, ...PIE, ...NA, ...ZHE]
 
 /**
- * V2 关卡体系：5 阶段 / 25 小关。
+ * V2 关卡体系：6 阶段 / 28 小关。
  *
  * 训练量设计依据（单次练习 3–6 分钟，达到有效肌肉记忆时长）：
  * - 字根关：单区 200 题（每键约 40 次）；全键位综合 300 题（每键约 12 次）
@@ -132,6 +132,16 @@ export const STAGES: StageConfig[] = [
       danzi('s5-challenge-freq', '常用字长跑', 'freq1', undefined, 200, 5000, 56, 0.9),
       article('s5-challenge-article', '文章耐力·岳阳楼记全文', ['yueyanglou'], 360, 7000, 70, 0.9),
       danzi('s5-final', '毕业测试·常用字', 'freq1', undefined, 200, 4500, 60, 0.92),
+    ],
+  },
+  {
+    id: 's6',
+    title: '终极挑战',
+    description: '以政府公文长文冲击极限速度',
+    levels: [
+      article('s6-policy-500', '公文长跑·500 字', ['zfgzbg-2024'], 500, 8000, 90, 0.9),
+      article('s6-policy-800', '公文长跑·800 字', ['zfgzbg-2025'], 800, 8000, 100, 0.9),
+      article('s6-policy-1000', '公文长跑·1000 字', ['zfgzbg-2025-task'], 1000, 8000, 120, 0.9),
     ],
   },
 ]
