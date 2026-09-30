@@ -6,15 +6,53 @@ export function isHan(c: string): boolean {
   return /[\u4e00-\u9fff]/.test(c)
 }
 
-/** 随机抽取 count 个（池不足时允许重复） */
-export function sample(pool: string[], count: number): string[] {
-  if (pool.length === 0) return []
-  const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  const out: string[] = []
-  while (out.length < count) {
-    out.push(...shuffled.slice(0, count - out.length))
+/** Fisher–Yates 洗牌（均匀随机，不修改原数组） */
+export function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = a[i]
+    a[i] = a[j]
+    a[j] = tmp
   }
-  return out.slice(0, count)
+  return a
+}
+
+/**
+ * 生成长度 count 的随机序列：
+ * - 循环洗牌取用，各元素出现次数尽量均分；
+ * - 避免相邻元素相同（含跨轮边界）；
+ * - 池不足时允许重复，池为空返回空数组。
+ */
+export function randomSequence<T>(pool: T[], count: number): T[] {
+  if (pool.length === 0 || count <= 0) return []
+  if (pool.length === 1) return new Array<T>(count).fill(pool[0])
+
+  const out: T[] = []
+  let prev: T | undefined
+  while (out.length < count) {
+    const round = shuffle(pool)
+    // 跨轮边界去重：若本轮首个元素与上一轮末尾相同，则与后续不同元素交换
+    if (prev !== undefined && round[0] === prev) {
+      const idx = round.findIndex((x) => x !== prev)
+      if (idx > 0) {
+        const tmp = round[0]
+        round[0] = round[idx]
+        round[idx] = tmp
+      }
+    }
+    for (const x of round) {
+      if (out.length >= count) break
+      out.push(x)
+    }
+    prev = out[out.length - 1]
+  }
+  return out
+}
+
+/** 随机抽取 count 个（池不足时允许重复，分布均匀且避免相邻重复） */
+export function sample(pool: string[], count: number): string[] {
+  return randomSequence(pool, count)
 }
 
 /** 按关卡配置构建出题池（单字关） */

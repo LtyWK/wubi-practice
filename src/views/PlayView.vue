@@ -7,7 +7,7 @@ import StatsBar from '@/components/StatsBar.vue'
 import TextPanel from '@/components/TextPanel.vue'
 import VirtualKeyboard from '@/components/VirtualKeyboard.vue'
 import { loadArticles, loadZigen } from '@/data/loader'
-import { buildPool, isHan, sample } from '@/data/pool'
+import { buildPool, isHan, randomSequence, sample } from '@/data/pool'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
@@ -148,18 +148,15 @@ function stateOf(state: string, wrong: boolean): TextCharState {
   return state === 'active' ? 'active' : 'pending'
 }
 
-/** 从键位池生成字根练习题（每个题随机取该键的一个字根） */
+/** 从键位池生成字根练习题：键位均匀分布且不连续重复，每题取该键的随机字根 */
 function makeZigenTasks(pool: string[], count: number): ZigenTask[] {
-  const out: ZigenTask[] = []
-  for (let i = 0; i < count; i += 1) {
-    const key = pool[Math.floor(Math.random() * pool.length)]
+  return randomSequence(pool, count).map((key) => {
     // 打字训练使用完整字形（all）
     const roots = zigenMap.value[key]?.all ?? []
     const root =
       roots.length > 0 ? roots[Math.floor(Math.random() * roots.length)] : key.toUpperCase()
-    out.push({ key, root })
-  }
-  return out
+    return { key, root }
+  })
 }
 
 /** 随机文字关卡（字根 / 单字）统一字符流：由 TextPanel 按容器宽度自动换行 */
@@ -453,21 +450,14 @@ function finish(): void {
 }
 
 function onPractice(ids: string[]): void {
+  if (ids.length === 0) return
+  // 每项重复 DRILL_REPEAT 次，整体均匀随机且不连续重复
+  const total = ids.length * DRILL_REPEAT
   if (mode.value === 'zigen') {
-    const tasks: ZigenTask[] = []
-    for (const key of ids) {
-      tasks.push(...makeZigenTasks([key], DRILL_REPEAT))
-    }
-    tasks.sort(() => Math.random() - 0.5)
-    initZigen(tasks, true)
+    initZigen(makeZigenTasks(ids, total), true)
     return
   }
-  const repeated: string[] = []
-  for (const id of ids) {
-    for (let i = 0; i < DRILL_REPEAT; i += 1) repeated.push(id)
-  }
-  repeated.sort(() => Math.random() - 0.5)
-  initText(repeated, true)
+  initText(randomSequence(ids, total), true)
 }
 
 function closeResult(): void {
