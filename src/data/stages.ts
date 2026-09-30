@@ -84,7 +84,7 @@ export const STAGES: StageConfig[] = [
       zigen('s1-zigen-pie', '撇区字根 T R E W Q', PIE, 200, 4000, 30),
       zigen('s1-zigen-na', '捺区字根 Y U I O P', NA, 200, 4000, 30),
       zigen('s1-zigen-zhe', '折区字根 N B V C X', ZHE, 200, 4000, 30),
-      zigen('s1-all-keys', '全键位综合', ALL_KEYS, 300, 3000, 44),
+      zigen('s1-all-keys', '全键位综合', ALL_KEYS, 300, 3000, 50),
     ],
   },
   {
@@ -94,8 +94,8 @@ export const STAGES: StageConfig[] = [
     levels: [
       danzi('s2-short1-a', '一级简码 G–M', 'short1', HENG.concat(SHU), 200, 5000, 40),
       danzi('s2-short1-b', '一级简码 T–X', 'short1', [...PIE, ...NA, ...ZHE], 200, 5000, 40),
-      danzi('s2-short1-all', '一级简码混合', 'short1', undefined, 200, 5000, 44),
-      danzi('s2-short2-mix', '二级简码入门', 'short2', undefined, 200, 5000, 44),
+      danzi('s2-short1-all', '一级简码混合', 'short1', undefined, 200, 5000, 50),
+      danzi('s2-short2-mix', '二级简码入门', 'short2', undefined, 200, 5000, 50),
     ],
   },
   {
@@ -105,9 +105,9 @@ export const STAGES: StageConfig[] = [
     levels: [
       danzi('s3-short2-heng-shu', '二级简码·横竖区', 'short2', HENG.concat(SHU), 200, 6000, 50),
       danzi('s3-short2-pie-na-zhe', '二级简码·撇捺折区', 'short2', [...PIE, ...NA, ...ZHE], 200, 6000, 50),
-      danzi('s3-freq1-a', '常用字·横竖区', 'freq1', HENG.concat(SHU), 200, 6000, 40),
-      danzi('s3-freq1-b', '常用字·撇捺折区', 'freq1', [...PIE, ...NA, ...ZHE], 200, 6000, 40),
-      danzi('s3-freq1-idcode', '识别码专题', 'idcode', undefined, 200, 6000, 36, 0.8),
+      danzi('s3-freq1-a', '常用字·横竖区', 'freq1', HENG.concat(SHU), 200, 6000, 50),
+      danzi('s3-freq1-b', '常用字·撇捺折区', 'freq1', [...PIE, ...NA, ...ZHE], 200, 6000, 50),
+      danzi('s3-freq1-idcode', '识别码专题', 'idcode', undefined, 200, 6000, 50, 0.8),
     ],
   },
   {
@@ -116,8 +116,8 @@ export const STAGES: StageConfig[] = [
     description: '在诗文中连续输入，追求流畅',
     levels: [
       article('s4-poem-5', '五言诗合集（10 首）', ['tangshi-5'], 260, 8000, 60, 0.9),
-      article('s4-poem-7', '七言诗合集（8 首）', ['tangshi-7'], 280, 8000, 64, 0.9),
-      article('s4-ci', '宋词合集（3 首）', ['songci'], 230, 8000, 64, 0.88),
+      article('s4-poem-7', '七言诗合集（8 首）', ['tangshi-7'], 280, 8000, 60, 0.9),
+      article('s4-ci', '宋词合集（3 首）', ['songci'], 230, 8000, 60, 0.88),
       article('s4-gu-wen', '古文合集（陋室铭 · 爱莲说）', ['guwen'], 205, 8000, 60, 0.88),
       article('s4-essay', '现代文合集（春 · 匆匆）', ['xiandai'], 300, 8000, 70, 0.85),
     ],
@@ -129,7 +129,7 @@ export const STAGES: StageConfig[] = [
     levels: [
       zigen('s5-challenge-zigen', '字根极速', ALL_KEYS, 200, 2500, 60, 0.92),
       danzi('s5-challenge-short', '简码极速', 'short2', undefined, 200, 4000, 60, 0.92),
-      danzi('s5-challenge-freq', '常用字长跑', 'freq1', undefined, 200, 5000, 56, 0.9),
+      danzi('s5-challenge-freq', '常用字长跑', 'freq1', undefined, 200, 5000, 60, 0.9),
       article('s5-challenge-article', '文章耐力·岳阳楼记全文', ['yueyanglou'], 360, 7000, 70, 0.9),
       danzi('s5-final', '毕业测试·常用字', 'freq1', undefined, 200, 4500, 60, 0.92),
     ],
