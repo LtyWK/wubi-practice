@@ -133,4 +133,15 @@ import { RouterLink, RouterView } from 'vue-router'
     position: static;
   }
 }
+
+/* 窄屏：压缩页面留白，避免内容被挤压 */
+@media (max-width: 640px) {
+  .app-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .app-main {
+    padding: var(--space-4) var(--space-3);
+  }
+}
 </style>

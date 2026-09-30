@@ -54,6 +54,18 @@ describe('PlayView 字根模式', () => {
     await nextTick()
     expect(wrapper.find('.tp-char--done-wrong').exists()).toBe(true)
   })
+
+  it('点按虚拟键盘可上屏（触控）', async () => {
+    const wrapper = mount(PlayView)
+    await waitUntil(() => wrapper.findAll('.tp-char').length > 0)
+
+    const hint = wrapper.find('.vk__key--hint')
+    expect(hint.exists()).toBe(true)
+    await hint.trigger('pointerdown')
+    await nextTick()
+
+    expect(wrapper.find('.tp-char--done-clean').exists()).toBe(true)
+  })
 })
 
 describe('PlayView 单字模式', () => {

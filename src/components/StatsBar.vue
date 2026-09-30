@@ -53,8 +53,9 @@ function pct(n: number): string {
 <style scoped>
 .stats {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: var(--space-8);
+  gap: var(--space-3) var(--space-8);
   padding: var(--space-2) 0;
 }
 
@@ -82,5 +83,19 @@ function pct(n: number): string {
   font-size: var(--font-sm);
   color: var(--color-text-muted);
   margin-left: 2px;
+}
+
+@media (max-width: 640px) {
+  .stats {
+    gap: var(--space-2) var(--space-5);
+  }
+
+  .stats__item {
+    min-width: 56px;
+  }
+
+  .stats__value {
+    font-size: var(--font-lg);
+  }
 }
 </style>

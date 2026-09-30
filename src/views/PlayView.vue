@@ -411,14 +411,19 @@ function handleTextKey(key: string): void {
   }
 }
 
-function onKeydown(e: KeyboardEvent): void {
+/** 统一输入入口：物理键盘与虚拟键盘点按共用 */
+function handleInput(key: string): void {
   if (finished.value) return
-  const key = e.key.toLowerCase()
   if (!/^[a-z ]$/.test(key)) return
-  if (key === ' ') e.preventDefault()
   startIfNeeded()
   if (mode.value === 'zigen') handleZigenKey(key)
   else handleTextKey(key)
+}
+
+function onKeydown(e: KeyboardEvent): void {
+  const key = e.key.toLowerCase()
+  if (key === ' ') e.preventDefault()
+  handleInput(key)
 }
 
 function onTimeoutTick(): void {
@@ -586,6 +591,7 @@ onUnmounted(() => {
         :roots="keyRoots"
         :short1="keyShorts"
         :disabled="finished"
+        @press="handleInput"
       />
     </div>
 
@@ -679,5 +685,22 @@ onUnmounted(() => {
 .volume__range:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 窄屏：压缩间距，控制按钮换行 */
+@media (max-width: 640px) {
+  .play {
+    gap: var(--space-4);
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+  }
+
+  .volume__range {
+    width: 110px;
+  }
 }
 </style>

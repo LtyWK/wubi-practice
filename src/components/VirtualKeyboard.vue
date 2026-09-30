@@ -29,6 +29,16 @@ const props = withDefaults(
   },
 )
 
+const emit = defineEmits<{
+  (e: 'press', key: string): void
+}>()
+
+/** 点按按键（触控 / 鼠标统一走 pointerdown） */
+function onPress(key: string): void {
+  if (props.disabled) return
+  emit('press', key)
+}
+
 /** QWERTY 三行（配合真实键盘） */
 const ROWS: string[][] = [
   ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
@@ -63,9 +73,17 @@ function keyClass(key: string): Record<string, boolean> {
 </script>
 
 <template>
-  <div class="vk" :class="{ 'vk--disabled': props.disabled }" aria-hidden="true">
+  <div class="vk" :class="{ 'vk--disabled': props.disabled }">
     <div v-for="(row, ri) in ROWS" :key="ri" class="vk__row">
-      <span v-for="key in row" :key="key" class="vk__key" :class="keyClass(key)">
+      <span
+        v-for="key in row"
+        :key="key"
+        class="vk__key"
+        :class="keyClass(key)"
+        role="button"
+        :aria-label="`${key.toUpperCase()} 键`"
+        @pointerdown.prevent="onPress(key)"
+      >
         <!-- 顶部一行：左上键名字根 · 中间字母 · 右上简码 -->
         <span class="vk__letter">{{ key.toUpperCase() }}</span>
         <span class="vk__name">{{ props.names?.[key] ?? '' }}</span>
@@ -79,13 +97,20 @@ function keyClass(key: string): Record<string, boolean> {
       </span>
     </div>
     <div class="vk__row">
-      <span class="vk__key vk__key--space" :class="keyClass(' ')">空 格</span>
+      <span
+        class="vk__key vk__key--space"
+        :class="keyClass(' ')"
+        role="button"
+        aria-label="空格键"
+        @pointerdown.prevent="onPress(' ')"
+      >空 格</span>
     </div>
   </div>
 </template>
 
 <style scoped>
 .vk {
+  --vk-gap: 8px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -105,14 +130,18 @@ function keyClass(key: string): Record<string, boolean> {
 
 .vk__row {
   display: flex;
-  gap: 8px;
+  gap: var(--vk-gap);
   justify-content: center;
+  width: 100%;
 }
 
 .vk__key {
   position: relative;
-  width: 84px;
-  height: 88px;
+  flex: 0 0 auto;
+  /* 10 列自适应铺满，桌面不超过 84px */
+  width: calc((100% - 9 * var(--vk-gap)) / 10);
+  max-width: 84px;
+  aspect-ratio: 84 / 88;
   display: flex;
   flex-direction: column;
   padding: 4px 5px 2px;
@@ -120,10 +149,22 @@ function keyClass(key: string): Record<string, boolean> {
   border-radius: var(--radius-md);
   background: var(--color-key-bg);
   color: var(--color-text);
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
   transition:
     background 0.15s,
     border-color 0.15s,
     color 0.15s;
+}
+
+.vk--disabled .vk__key {
+  cursor: not-allowed;
+}
+
+.vk:not(.vk--disabled) .vk__key:active {
+  transform: scale(0.96);
 }
 
 /* 五区用边框色区分（低饱和） */
@@ -290,8 +331,10 @@ function keyClass(key: string): Record<string, boolean> {
 }
 
 .vk__key--space {
-  width: 460px;
-  max-width: 60vw;
+  flex: 0 0 auto;
+  width: min(460px, 100%);
+  max-width: 100%;
+  aspect-ratio: auto;
   height: 46px;
   align-items: center;
   justify-content: center;
@@ -299,5 +342,58 @@ function keyClass(key: string): Record<string, boolean> {
   font-weight: 600;
   color: var(--color-text-muted);
   padding: 0;
+}
+
+/* 窄屏：精简主体字根，按键自适应铺满，避免溢出 */
+@media (max-width: 640px) {
+  .vk {
+    --vk-gap: 4px;
+    gap: 4px;
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+  }
+
+  .vk__key {
+    height: 40px;
+    aspect-ratio: auto;
+    padding: 2px 3px;
+    border-width: 1.5px;
+    border-radius: var(--radius-sm);
+  }
+
+  .vk__roots {
+    display: none;
+  }
+
+  .vk__letter {
+    top: auto;
+    bottom: 3px;
+    font-size: 0.8125rem;
+  }
+
+  .vk__name {
+    top: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6875rem;
+  }
+
+  .vk__short {
+    top: 3px;
+    right: 3px;
+    font-size: 0.5625rem;
+  }
+
+  .vk__key--space {
+    width: 90%;
+    height: 34px;
+  }
+}
+
+/* 极窄屏：再隐藏一级简码，只留字母 + 键名 */
+@media (max-width: 400px) {
+  .vk__short {
+    display: none;
+  }
 }
 </style>
