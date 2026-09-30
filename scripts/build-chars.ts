@@ -245,13 +245,20 @@ function main(): void {
     'E0CD', 'E0DF', 'E0F4', 'E13D', 'E155', 'E171',
     'E1AD', 'E1DF', 'E1FA',
   ])
-  // 字体空字形 PUA（build-glyph-table.py 已剔除），不参与一致性校验
-  const EMPTY_PUA = new Set(['E119'])
+  // 人工排除的字根 PUA（scripts/sources/zigen-exclude.json），不参与一致性校验
+  const excludePath = resolve(SOURCES, 'zigen-exclude.json')
+  const EXCLUDE_PUA = new Set<string>(
+    existsSync(excludePath)
+      ? (
+          (JSON.parse(readFileSync(excludePath, 'utf8')) as { pua?: string[] }).pua ?? []
+        ).map((x) => x.toUpperCase().replace('U+', ''))
+      : [],
+  )
   const allByKey = new Map<string, Set<string>>()
   for (const item of zigenOut) allByKey.set(item.key, new Set(item.all))
   const mismatches = new Set<string>()
   for (const [pua, keys] of puaKeyFreq) {
-    if (IDENT_PUA.has(pua) || EMPTY_PUA.has(pua)) continue
+    if (IDENT_PUA.has(pua) || EXCLUDE_PUA.has(pua)) continue
     const mainKey = [...keys.entries()].sort((a, b) => b[1] - a[1])[0][0]
     const glyph = String.fromCodePoint(parseInt(pua, 16))
     if (!allByKey.get(mainKey)?.has(glyph)) {

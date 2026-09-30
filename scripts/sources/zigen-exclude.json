@@ -1,0 +1,4 @@
+{
+  "_comment": "人工移除的字根 PUA（易混淆 / 不常用 / 字体空字形）。build-glyph-table.py 与 build-chars.ts 均读取并跳过，重跑不会回填。值可写 \"E119\" 或 \"U+E119\"。",
+  "pua": ["E0D8", "E119", "E192"]
+}

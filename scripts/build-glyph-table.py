@@ -46,6 +46,7 @@ TSV = os.path.join(ROOT, 'scripts', 'sources', 'data-wubi-v86.tsv')
 ROOTS_MAP = os.path.join(ROOT, 'scripts', 'sources', 'roots-map.json')
 OUT_JSON = os.path.join(ROOT, 'scripts', 'sources', 'zigen-glyphs.json')
 OUT_DOC = os.path.join(ROOT, 'doc', '字形归并说明.txt')
+EXCLUDE = os.path.join(ROOT, 'scripts', 'sources', 'zigen-exclude.json')
 
 BODY_LIMIT = 15
 ORDER = ['g', 'f', 'd', 's', 'a', 'h', 'j', 'k', 'l', 'm',
@@ -75,9 +76,19 @@ IDENT_PUA = {
     'E1AD', 'E1DF', 'E1FA',
 }
 
-# 字体中无轮廓（空字形）的 PUA：在 cmap 内但绘制为空，跳过以免显示空白
-# E119（M 键「几」的变体，与 E113/E115 重复）
-EMPTY_PUA = {'E119'}
+def load_exclude() -> set[str]:
+    """人工移除的字根 PUA（易混淆 / 不常用 / 空字形），见 zigen-exclude.json"""
+    try:
+        with open(EXCLUDE, encoding='utf-8') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        return set()
+    out: set[str] = set()
+    for x in data.get('pua', []):
+        s = str(x).strip().upper().replace('U+', '')
+        if s:
+            out.add(s)
+    return out
 
 
 def load_votes() -> tuple[dict[str, str], dict[str, int]]:
@@ -111,17 +122,18 @@ def main() -> None:
     font_pua = {
         f'{cp:X}' for cp in font.getBestCmap() if 0xE000 <= cp <= 0xF8FF
     }
+    exclude = load_exclude()
 
     # 汇总：key -> [{pua, glyph, name, freq}]
     entries: dict[str, list[dict]] = {}
     removed_ident: list[str] = []
-    removed_empty: list[str] = []
+    removed_manual: list[str] = []
     for pua_hex in sorted(main_key):
         if pua_hex not in font_pua:
             continue
         key = main_key[pua_hex]
-        if pua_hex in EMPTY_PUA:
-            removed_empty.append(f'{key.upper()} U+{pua_hex}')
+        if pua_hex in exclude:
+            removed_manual.append(f'{key.upper()} U+{pua_hex}')
             continue
         if key not in ORDER:
             continue
@@ -145,8 +157,8 @@ def main() -> None:
            '  all    完整字形（打字训练）', '',
            f'[规则1] 已滤除识别码符号（{len(removed_ident)} 个）：']
     doc += [f'  {x}' for x in removed_ident]
-    doc += ['', f'[规则1b] 已滤除字体空字形 PUA（{len(removed_empty)} 个）：']
-    doc += [f'  {x}' for x in removed_empty]
+    doc += ['', f'[规则1b] 已滤除人工排除的字根 PUA（{len(removed_manual)} 个）：']
+    doc += [f'  {x}' for x in removed_manual]
     doc += ['', '各键：总字形数 → 主体数（>16 触发精简）']
 
     for key in ORDER:
