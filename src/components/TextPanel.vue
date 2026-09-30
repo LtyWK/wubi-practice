@@ -138,7 +138,9 @@ watch(
   font-size: 1.375rem;
   line-height: 2.8;
   letter-spacing: 0.15em;
+  white-space: normal;
   word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .text-panel__text--center {

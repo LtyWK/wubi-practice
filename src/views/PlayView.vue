@@ -171,21 +171,21 @@ function makeZigenTasks(pool: string[], count: number): ZigenTask[] {
   return out
 }
 
-const zigenItems = computed<{ char: string; state: TextCharState }[]>(() =>
-  zigenQueue.value.map((task, i) => {
-    let state: TextCharState = 'pending'
-    if (i < zigenIndex.value) state = zigenWrong.value[i] ? 'done-wrong' : 'done-clean'
-    else if (i === zigenIndex.value) state = 'active'
-    return { char: task.root, state }
-  }),
-)
-
-const danziItems = computed<{ char: string; state: TextCharState }[]>(() =>
-  (session.value?.items ?? []).map((it) => ({
+/** 随机文字关卡（字根 / 单字）统一字符流：由 TextPanel 按容器宽度自动换行 */
+const linearItems = computed<{ char: string; state: TextCharState }[]>(() => {
+  if (mode.value === 'zigen') {
+    return zigenQueue.value.map((task, i) => {
+      let state: TextCharState = 'pending'
+      if (i < zigenIndex.value) state = zigenWrong.value[i] ? 'done-wrong' : 'done-clean'
+      else if (i === zigenIndex.value) state = 'active'
+      return { char: task.root, state }
+    })
+  }
+  return (session.value?.items ?? []).map((it) => ({
     char: it.char,
     state: stateOf(it.state, it.wrongAttempts.length > 0),
-  })),
-)
+  }))
+})
 
 const articleItems = computed<{ char: string; state: TextCharState }[]>(() => {
   const s = session.value
@@ -211,9 +211,8 @@ const articleItems = computed<{ char: string; state: TextCharState }[]>(() => {
 })
 
 const textItems = computed(() => {
-  if (mode.value === 'zigen') return zigenItems.value
   if (articleMode.value) return articleItems.value
-  return danziItems.value
+  return linearItems.value
 })
 
 /** 标题：大关（阶段）· 小关 */
