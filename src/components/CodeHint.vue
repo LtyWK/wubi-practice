@@ -20,7 +20,10 @@ const codeChars = computed(() => props.code.split(''))
       <template v-if="props.items.length">
         <span class="hint__arrow">→</span>
         <span class="hint__roots">
-          （{{ props.items.map((it) => it.text).join(' + ') }}）
+          （<template v-for="(it, i) in props.items" :key="i"><span
+            v-if="i > 0"
+            class="hint__root-sep"
+          > + </span><span class="hint__root">{{ it.text }}</span></template>）
         </span>
       </template>
       <span class="hint__arrow">→</span>
@@ -73,5 +76,15 @@ const codeChars = computed(() => props.code.split(''))
 .hint__roots {
   color: var(--color-text-muted);
   font-size: var(--font-base);
+}
+
+/* 字根加粗（字体为单字重轮廓字体，浏览器合成加粗） */
+.hint__root {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.hint__root-sep {
+  color: var(--color-text-muted);
 }
 </style>
