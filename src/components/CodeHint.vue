@@ -17,6 +17,12 @@ const codeChars = computed(() => props.code.split(''))
   <div class="hint">
     <div class="hint__line">
       <span class="hint__char">{{ props.char }}</span>
+      <template v-if="props.items.length">
+        <span class="hint__arrow">→</span>
+        <span class="hint__roots">
+          （{{ props.items.map((it) => it.text).join(' + ') }}）
+        </span>
+      </template>
       <span class="hint__arrow">→</span>
       <span class="hint__code">
         <span
@@ -27,9 +33,6 @@ const codeChars = computed(() => props.code.split(''))
         >
           {{ c.toUpperCase() }}
         </span>
-      </span>
-      <span v-if="props.items.length" class="hint__roots">
-        （{{ props.items.map((it) => `${it.text} ${it.key.toUpperCase()}`).join(' + ') }}）
       </span>
     </div>
   </div>
