@@ -10,6 +10,7 @@ const THEME_KEY = 'wubi.ui.theme'
 const SOUND_KEY = 'wubi.ui.sound'
 const VOLUME_KEY = 'wubi.ui.volume'
 const HINTS_KEY = 'wubi.ui.hints'
+const CODEHINT_KEY = 'wubi.ui.codehint'
 
 /** 默认音量（0-1） */
 const DEFAULT_VOLUME = 1
@@ -47,6 +48,8 @@ const soundOn = ref<boolean>(read(SOUND_KEY) !== 'off')
 const volume = ref<number>(initialVolume())
 /** 按键高亮提示：下一步按键呼吸高亮 + 最近一次输入结果常亮 */
 const hintsOn = ref<boolean>(read(HINTS_KEY) !== 'off')
+/** 拆字提示卡片是否展开显示 */
+const codeHintOn = ref<boolean>(read(CODEHINT_KEY) !== 'off')
 
 function systemPrefersDark(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
@@ -76,11 +79,13 @@ export function useUiSettings(): {
   soundOn: typeof soundOn
   volume: typeof volume
   hintsOn: typeof hintsOn
+  codeHintOn: typeof codeHintOn
   setAlign: (value: TextAlign) => void
   setTheme: (value: ThemeMode) => void
   setSound: (value: boolean) => void
   setVolume: (value: number) => void
   setHints: (value: boolean) => void
+  setCodeHint: (value: boolean) => void
   applyTheme: () => void
 } {
   function setAlign(value: TextAlign): void {
@@ -110,17 +115,24 @@ export function useUiSettings(): {
     write(HINTS_KEY, value ? 'on' : 'off')
   }
 
+  function setCodeHint(value: boolean): void {
+    codeHintOn.value = value
+    write(CODEHINT_KEY, value ? 'on' : 'off')
+  }
+
   return {
     align,
     theme,
     soundOn,
     volume,
     hintsOn,
+    codeHintOn,
     setAlign,
     setTheme,
     setSound,
     setVolume,
     setHints,
+    setCodeHint,
     applyTheme,
   }
 }

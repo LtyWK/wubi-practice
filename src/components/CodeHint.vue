@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { HintItem } from '@/schemes/base'
+import { useUiSettings } from '@/composables/useUiSettings'
 
 const props = defineProps<{
   char: string
@@ -11,39 +12,93 @@ const props = defineProps<{
 }>()
 
 const codeChars = computed(() => props.code.split(''))
+const { codeHintOn, setCodeHint } = useUiSettings()
 </script>
 
 <template>
-  <div class="hint">
-    <div class="hint__line">
-      <span class="hint__char">{{ props.char }}</span>
-      <template v-if="props.items.length">
+  <div class="hint-card">
+    <div class="hint-card__head">
+      <span class="hint-card__title">拆字提示</span>
+      <button
+        class="hint-card__toggle"
+        :class="{ 'hint-card__toggle--off': !codeHintOn }"
+        @click="setCodeHint(!codeHintOn)"
+      >
+        {{ codeHintOn ? '隐藏' : '显示' }}
+      </button>
+    </div>
+    <div v-show="codeHintOn" class="hint-card__body">
+      <div class="hint__line">
+        <span class="hint__char">{{ props.char }}</span>
+        <template v-if="props.items.length">
+          <span class="hint__arrow">→</span>
+          <span class="hint__roots">
+            （<template v-for="(it, i) in props.items" :key="i"><span
+              v-if="i > 0"
+              class="hint__root-sep"
+            > + </span><span class="hint__root">{{ it.text }}</span></template>）
+          </span>
+        </template>
         <span class="hint__arrow">→</span>
-        <span class="hint__roots">
-          （<template v-for="(it, i) in props.items" :key="i"><span
-            v-if="i > 0"
-            class="hint__root-sep"
-          > + </span><span class="hint__root">{{ it.text }}</span></template>）
+        <span class="hint__code">
+          <span
+            v-for="(c, i) in codeChars"
+            :key="i"
+            class="hint__code-char"
+            :class="{ 'hint__code-char--typed': i < props.input.length }"
+          >
+            {{ c.toUpperCase() }}
+          </span>
         </span>
-      </template>
-      <span class="hint__arrow">→</span>
-      <span class="hint__code">
-        <span
-          v-for="(c, i) in codeChars"
-          :key="i"
-          class="hint__code-char"
-          :class="{ 'hint__code-char--typed': i < props.input.length }"
-        >
-          {{ c.toUpperCase() }}
-        </span>
-      </span>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.hint {
+.hint-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.hint-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.hint-card__title {
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+
+.hint-card__toggle {
+  padding: 2px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+.hint-card__toggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.hint-card__toggle--off {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+.hint-card__body {
   text-align: center;
+  margin-top: var(--space-2);
 }
 
 .hint__line {
