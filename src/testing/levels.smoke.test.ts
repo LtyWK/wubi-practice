@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { loadArticles } from '@/data/loader'
+import { loadArticles, loadRadicalWeights, loadZigen } from '@/data/loader'
 import { buildPool, isHan, sample } from '@/data/pool'
 import { STAGES } from '@/data/stages'
 import { createSession, feedKey } from '@/engine/judge'
@@ -25,7 +25,15 @@ describe('关卡冒烟：按正确编码可自动通关', () => {
       it(`${level.id} · ${level.title}`, async () => {
         await ensureWubi86()
         if (level.type === 'zigen') {
-          expect(level.pool.length).toBeGreaterThan(0)
+          if (level.source === 'radicals') {
+            // 常用字根强化：出题依赖权重数据而非固定键位池，且字形须来自合法字根表
+            const [weights, zigenData] = await Promise.all([loadRadicalWeights(), loadZigen()])
+            expect(weights.length).toBeGreaterThan(0)
+            const allByKey = new Map(zigenData.map((z) => [z.key, new Set(z.all)]))
+            expect(weights.every((w) => allByKey.get(w.key)?.has(w.root))).toBe(true)
+          } else {
+            expect(level.pool.length).toBeGreaterThan(0)
+          }
           return
         }
         const chars = await levelChars(level)

@@ -21,8 +21,8 @@ export interface LevelConfig {
   title: string
   /** zigen：键位列表；danzi/article：忽略 */
   pool: string[]
-  /** danzi 出题池 */
-  source?: 'short1' | 'short2' | 'freq1' | 'idcode'
+  /** 出题来源：danzi 为 short1/short2/freq1/idcode；zigen 为 radicals（常用字根加权） */
+  source?: 'short1' | 'short2' | 'freq1' | 'idcode' | 'radicals'
   /** danzi 出题首码过滤（可选，用于按区分关） */
   starts?: string[]
   /** article：篇目 id 列表 */
@@ -116,6 +116,16 @@ export type MistakeBook = Record<
     mastered: boolean
   }
 >
+
+/** 常用字根权重（由 scripts/build-chars.ts 统计一级常用字生成） */
+export interface RadicalWeight {
+  /** 字根代表字形（PUA 字符） */
+  root: string
+  /** 所属键位 */
+  key: string
+  /** 一级常用字中的出现次数 */
+  count: number
+}
 
 /** 单字统计（V2） */
 export interface CharStat {

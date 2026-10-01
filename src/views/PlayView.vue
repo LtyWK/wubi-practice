@@ -6,8 +6,8 @@ import ResultModal from '@/components/ResultModal.vue'
 import StatsBar from '@/components/StatsBar.vue'
 import TextPanel from '@/components/TextPanel.vue'
 import VirtualKeyboard from '@/components/VirtualKeyboard.vue'
-import { loadArticles, loadZigen } from '@/data/loader'
-import { buildPool, isHan, randomSequence, sample } from '@/data/pool'
+import { loadArticles, loadRadicalWeights, loadZigen } from '@/data/loader'
+import { buildPool, isHan, randomSequence, sample, weightedSequence } from '@/data/pool'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
@@ -24,6 +24,7 @@ import type {
   KeyFeedback,
   LevelConfig,
   MistakeOption,
+  RadicalWeight,
   TextCharState,
   ZigenItem,
 } from '@/types'
@@ -97,6 +98,8 @@ const sessionStartAt = ref(0)
 const timeouts = ref(0)
 const streak = ref<Record<string, number>>({})
 const zigenMap = ref<Record<string, ZigenItem>>({})
+/** 常用字根权重（常用字根强化训练用，按一级常用字使用频率降序） */
+const radicalWeights = ref<RadicalWeight[]>([])
 const articleTitle = ref('')
 /** 本会话超时项（文本为汉字，字根为键位）→ 超时次数，用于加入加练 */
 const timeoutCounts = ref<Record<string, number>>({})
@@ -159,6 +162,15 @@ function makeZigenTasks(pool: string[], count: number): ZigenTask[] {
       roots.length > 0 ? roots[Math.floor(Math.random() * roots.length)] : key.toUpperCase()
     return { key, root }
   })
+}
+
+/** 常用字根强化：按常用字根权重加权出题，避免与上一题键位重复 */
+function makeRadicalTasks(count: number): ZigenTask[] {
+  if (radicalWeights.value.length === 0) {
+    // 兜底：权重数据缺失时退回全键位随机
+    return makeZigenTasks(Object.keys(zigenMap.value), count)
+  }
+  return weightedSequence(radicalWeights.value, count).map((w) => ({ key: w.key, root: w.root }))
 }
 
 /** 随机文字关卡（字根 / 单字）统一字符流：由 TextPanel 按容器宽度自动换行 */
@@ -507,7 +519,9 @@ async function startRound(): Promise<void> {
   const lv = level.value
   if (!lv) return
   if (lv.type === 'zigen') {
-    initZigen(makeZigenTasks(lv.pool, lv.length))
+    initZigen(
+      lv.source === 'radicals' ? makeRadicalTasks(lv.length) : makeZigenTasks(lv.pool, lv.length),
+    )
   } else if (lv.type === 'article') {
     await initArticle(lv)
   } else {
@@ -523,8 +537,9 @@ function restart(): void {
 
 onMounted(async () => {
   await ensureWubi86()
-  const zigenData = await loadZigen()
+  const [zigenData, weights] = await Promise.all([loadZigen(), loadRadicalWeights()])
   zigenMap.value = Object.fromEntries(zigenData.map((z) => [z.key, z]))
+  radicalWeights.value = weights
 
   if (!isFree.value) {
     const lv = level.value

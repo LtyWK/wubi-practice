@@ -12,6 +12,27 @@ function zigen(
   return { id, type: 'zigen', title, pool: keys, length, timeoutMs, require: { speed, accuracy } }
 }
 
+/** 常用字根强化：按键位字根在一级常用字中的使用频率加权出题 */
+function zigenRadicals(
+  id: string,
+  title: string,
+  length: number,
+  timeoutMs: number,
+  speed: number,
+  accuracy = 0.9,
+): LevelConfig {
+  return {
+    id,
+    type: 'zigen',
+    title,
+    pool: [],
+    source: 'radicals',
+    length,
+    timeoutMs,
+    require: { speed, accuracy },
+  }
+}
+
 function danzi(
   id: string,
   title: string,
@@ -64,10 +85,11 @@ const ZHE = ['n', 'b', 'v', 'c', 'x']
 const ALL_KEYS = [...HENG, ...SHU, ...PIE, ...NA, ...ZHE]
 
 /**
- * V2 关卡体系：6 阶段 / 28 小关。
+ * V2 关卡体系：6 阶段 / 29 小关。
  *
  * 训练量设计依据（单次练习 3–6 分钟，达到有效肌肉记忆时长）：
  * - 字根关：单区 200 题（每键约 40 次）；全键位综合 300 题（每键约 12 次）
+ * - 常用字根强化：300 题，按一级常用字中字根的使用频率加权，高频字根更多出现
  * - 简码 / 常用字关：200 题
  * - 文章关：整篇连续输入（length 为字数参考，实际按篇目字数）
  *
@@ -77,7 +99,7 @@ export const STAGES: StageConfig[] = [
   {
     id: 's1',
     title: '字根启蒙',
-    description: '逐区认识 25 个键位与全部字根，并以全键位综合收束',
+    description: '逐区认识 25 个键位与全部字根，再以全键位综合与常用字根强化收束',
     levels: [
       zigen('s1-zigen-heng', '横区字根 G F D S A', HENG, 200, 4000, 30),
       zigen('s1-zigen-shu', '竖区字根 H J K L M', SHU, 200, 4000, 30),
@@ -85,6 +107,7 @@ export const STAGES: StageConfig[] = [
       zigen('s1-zigen-na', '捺区字根 Y U I O P', NA, 200, 4000, 30),
       zigen('s1-zigen-zhe', '折区字根 N B V C X', ZHE, 200, 4000, 30),
       zigen('s1-all-keys', '全键位综合', ALL_KEYS, 300, 3000, 50),
+      zigenRadicals('s1-zigen-common', '常用字根强化训练', 300, 3000, 50),
     ],
   },
   {

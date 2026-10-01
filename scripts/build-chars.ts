@@ -10,6 +10,7 @@
  * 输出（src/data/generated/）：
  *   - chars.json            全量单字码表
  *   - chars.freq1.json      一级（通用规范一级 3500）常用字
+ *   - radical-weights.json  一级常用字的字根使用频率（常用字根强化训练用）
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -35,6 +36,13 @@ const KEY_ROOT: Record<string, string> = {
   y: '言', u: '立', i: '水', o: '火', p: '之',
   n: '已', b: '子', v: '女', c: '又', x: '纟',
 }
+
+/** 识别码 PUA（字体渲染为带圈字形），统计常用字根时须排除 */
+const IDENT_PUA = new Set([
+  'E000', 'E015', 'E02D', 'E06A', 'E080', 'E097',
+  'E0CD', 'E0DF', 'E0F4', 'E13D', 'E155', 'E171',
+  'E1AD', 'E1DF', 'E1FA',
+])
 
 const CJK = /[\u4e00-\u9fff]/
 const CODE = /^[a-z]{1,4}$/
@@ -166,6 +174,8 @@ function main(): void {
   const entries: Record<string, CharEntry> = {}
   const freq1: Record<string, CharEntry> = {}
   const unmapped = new Set<string>()
+  // 一级常用字中各字根的使用频率（按 键位+字根文本 聚合，root 为该根的代表字形）
+  const radicalFreq = new Map<string, { root: string; key: string; count: number }>()
 
   for (const ch of all) {
     const d = data.get(ch)
@@ -182,6 +192,8 @@ function main(): void {
     }
 
     const radicals: [string, string][] = []
+    /** 与 radicals 一一对应的 PUA 字形（用于常用字根权重数据的代表字形） */
+    const radicalGlyphs: string[] = []
     if (d) {
       const n = Math.min(d.puas.length, code.length)
       for (let i = 0; i < n; i++) {
@@ -191,6 +203,7 @@ function main(): void {
         if (!known) unmapped.add(pua)
         const root = known ?? KEY_ROOT[key] ?? key
         radicals.push([root, key])
+        radicalGlyphs.push(String.fromCodePoint(parseInt(pua, 16)))
         let keys = puaKeyFreq.get(pua)
         if (!keys) {
           keys = new Map()
@@ -201,6 +214,17 @@ function main(): void {
     }
 
     const isFreq1 = level1.has(ch)
+    // 统计一级常用字使用的字根：同键位同字根文本归并计数（排除识别码，其字形为带圈符号）
+    if (isFreq1) {
+      for (let i = 0; i < radicals.length; i++) {
+        if (d && IDENT_PUA.has(d.puas[i])) continue
+        const [text, key] = radicals[i]
+        const id = `${key}:${text}`
+        const cur = radicalFreq.get(id)
+        if (cur) cur.count += 1
+        else radicalFreq.set(id, { root: radicalGlyphs[i], key, count: 1 })
+      }
+    }
     const entry: CharEntry = {
       code,
       short,
@@ -215,6 +239,11 @@ function main(): void {
   mkdirSync(OUT_DIR, { recursive: true })
   writeFileSync(resolve(OUT_DIR, 'chars.json'), JSON.stringify(entries), 'utf8')
   writeFileSync(resolve(OUT_DIR, 'chars.freq1.json'), JSON.stringify(freq1), 'utf8')
+  // 常用字根权重：一级常用字中各字根出现次数（降序），驱动「常用字根强化训练」
+  const radicalWeights = [...radicalFreq.values()].sort(
+    (a, b) => b.count - a.count || a.key.localeCompare(b.key),
+  )
+  writeFileSync(resolve(OUT_DIR, 'radical-weights.json'), JSON.stringify(radicalWeights), 'utf8')
   // 字根表：口诀/注释（zigen.json）+ 字形（zigen-glyphs.json）合并输出
   const zigenMeta = JSON.parse(
     readFileSync(resolve(SOURCES, 'zigen.json'), 'utf8'),
@@ -240,11 +269,6 @@ function main(): void {
   writeFileSync(resolve(OUT_DIR, 'zigen.json'), JSON.stringify(zigenOut), 'utf8')
 
   // 一致性校验：拆解数据中每个非识别码 PUA 的主键位，其字形应出现在该键的 all 中
-  const IDENT_PUA = new Set([
-    'E000', 'E015', 'E02D', 'E06A', 'E080', 'E097',
-    'E0CD', 'E0DF', 'E0F4', 'E13D', 'E155', 'E171',
-    'E1AD', 'E1DF', 'E1FA',
-  ])
   // 人工排除的字根 PUA（scripts/sources/zigen-exclude.json），不参与一致性校验
   const excludePath = resolve(SOURCES, 'zigen-exclude.json')
   const EXCLUDE_PUA = new Set<string>(
@@ -279,7 +303,7 @@ function main(): void {
 
   const total = Object.keys(entries).length
   const f1 = Object.keys(freq1).length
-  console.log(`[build-chars] 单字条目 ${total}，一级常用字 ${f1}`)
+  console.log(`[build-chars] 单字条目 ${total}，一级常用字 ${f1}，常用字根 ${radicalWeights.length}`)
   if (unmapped.size > 0) {
     console.log(`[build-chars] 未映射字根 PUA ${unmapped.size} 个（已按键名兜底）`)
   }

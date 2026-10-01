@@ -1,4 +1,4 @@
-import type { Article, CharEntry, ZigenItem } from '@/types'
+import type { Article, CharEntry, RadicalWeight, ZigenItem } from '@/types'
 
 /** 全量单字码表（动态懒加载 + 内存缓存） */
 let allCharsCache: Promise<Record<string, CharEntry>> | null = null
@@ -37,6 +37,19 @@ export function loadArticles(): Promise<Article[]> {
     )
   }
   return articlesCache
+}
+
+/** 常用字根权重表（一级常用字字根使用频率） */
+let radicalWeightCache: Promise<RadicalWeight[]> | null = null
+
+/** 懒加载常用字根权重表 */
+export function loadRadicalWeights(): Promise<RadicalWeight[]> {
+  if (!radicalWeightCache) {
+    radicalWeightCache = import('./generated/radical-weights.json').then(
+      (m) => m.default as unknown as RadicalWeight[],
+    )
+  }
+  return radicalWeightCache
 }
 
 /** 25 键字根表 */

@@ -1,4 +1,4 @@
-import type { LevelConfig } from '@/types'
+import type { LevelConfig, RadicalWeight } from '@/types'
 import { loadAllChars, loadFreq1Chars } from './loader'
 
 /** 是否汉字 */
@@ -53,6 +53,39 @@ export function randomSequence<T>(pool: T[], count: number): T[] {
 /** 随机抽取 count 个（池不足时允许重复，分布均匀且避免相邻重复） */
 export function sample(pool: string[], count: number): string[] {
   return randomSequence(pool, count)
+}
+
+/**
+ * 按常用字根权重生成字根序列（常用字根强化训练用）。
+ * - 权重取 sqrt(count) 压缩：常用字根明显更常出现，同时保留低频字根的机会；
+ * - 尽量让相邻题目的键位不同，使键位分布更均衡。
+ */
+export function weightedSequence(items: RadicalWeight[], count: number): RadicalWeight[] {
+  if (items.length === 0 || count <= 0) return []
+  if (items.length === 1) return new Array<RadicalWeight>(count).fill(items[0])
+
+  const weights = items.map((it) => Math.sqrt(Math.max(1, it.count)))
+  const total = weights.reduce((a, b) => a + b, 0)
+
+  function pick(): RadicalWeight {
+    let r = Math.random() * total
+    for (let i = 0; i < items.length; i += 1) {
+      r -= weights[i]
+      if (r <= 0) return items[i]
+    }
+    return items[items.length - 1]
+  }
+
+  const out: RadicalWeight[] = []
+  let prevKey = ''
+  while (out.length < count) {
+    let next = pick()
+    // 避免连续出现同一键位，重抽有限次后接受
+    for (let guard = 0; next.key === prevKey && guard < 8; guard += 1) next = pick()
+    out.push(next)
+    prevKey = next.key
+  }
+  return out
 }
 
 /** 按关卡配置构建出题池（单字关） */
