@@ -12,7 +12,7 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }))
 
-const { unlockStage, resetAll } = useSave()
+const { unlockStage, resetAll, isLevelPassed } = useSave()
 
 beforeEach(() => {
   localStorage.clear()
@@ -65,6 +65,41 @@ describe('PlayView 字根模式', () => {
     await nextTick()
 
     expect(wrapper.find('.tp-char--done-clean').exists()).toBe(true)
+  })
+
+  it('加练不写入关卡进度（未达标关卡不会被解锁）', async () => {
+    const wrapper = mount(PlayView)
+    await waitUntil(() => wrapper.findAll('.tp-char').length > 0)
+
+    // 制造 30 次错键，拉低正确率使本关不达标（z 不在横区键位池内）
+    for (let i = 0; i < 30; i += 1) {
+      pressKey('z')
+      await nextTick()
+    }
+    // 正确完成全部 200 题
+    for (let i = 0; i < 200; i += 1) {
+      const key = wrapper.find('.vk__key--hint .vk__letter').text().toLowerCase()
+      pressKey(key)
+      await nextTick()
+    }
+
+    await waitUntil(() => wrapper.find('.modal').exists())
+    expect(isLevelPassed('s1-zigen-heng')).toBe(false)
+
+    const practice = wrapper.findAll('button').find((b) => b.text().includes('加练所选'))
+    expect(practice).toBeTruthy()
+    await practice!.trigger('click')
+    await nextTick()
+
+    // 完成加练（10 题，全为 z），即便成绩达标也不应解锁
+    await waitUntil(() => wrapper.findAll('.tp-char').length > 0)
+    for (let i = 0; i < 10; i += 1) {
+      pressKey('z')
+      await nextTick()
+    }
+
+    await waitUntil(() => wrapper.find('.modal').exists())
+    expect(isLevelPassed('s1-zigen-heng')).toBe(false)
   })
 })
 

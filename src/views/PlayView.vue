@@ -444,7 +444,8 @@ function finish(): void {
   now.value = Date.now()
   showResult.value = true
   const lv = level.value
-  if (lv) {
+  // 加练不计入关卡进度与解锁
+  if (lv && !drill.value) {
     recordResult(lv.id, stats.value.speed, stats.value.accuracy, passed.value, timeouts.value)
   }
 }
@@ -595,7 +596,7 @@ onUnmounted(() => {
       :passed="passed"
       :requirement="requirement"
       :options="options"
-      :show-pass="!isFree"
+      :show-pass="!isFree && !drill"
       @practice="onPractice"
       @close="closeResult"
     />
