@@ -98,6 +98,8 @@ const timeouts = ref(0)
 const streak = ref<Record<string, number>>({})
 const zigenMap = ref<Record<string, ZigenItem>>({})
 const articleTitle = ref('')
+/** 本会话超时项（文本为汉字，字根为键位）→ 超时次数，用于加入加练 */
+const timeoutCounts = ref<Record<string, number>>({})
 
 let tickTimer: number | undefined
 let timeoutTimer: number | undefined
@@ -255,14 +257,21 @@ const passed = computed(() => {
 
 const options = computed<MistakeOption[]>(() => {
   if (mode.value === 'zigen') {
-    return Object.entries(zigenErrors.value).map(([key, count]) => ({
+    const list: MistakeOption[] = Object.entries(zigenErrors.value).map(([key, count]) => ({
       id: key,
       main: key.toUpperCase(),
       detail: `错误 ${count} 次`,
     }))
+    const seen = new Set(list.map((o) => o.id))
+    for (const [key, count] of Object.entries(timeoutCounts.value)) {
+      if (seen.has(key)) continue
+      list.push({ id: key, main: key.toUpperCase(), detail: `超时 ${count} 次` })
+    }
+    return list
   }
   const s = session.value
   const list: MistakeOption[] = []
+  const seen = new Set<string>()
   if (s) {
     for (const it of s.items) {
       if (it.wrongAttempts.length > 0) {
@@ -273,8 +282,13 @@ const options = computed<MistakeOption[]>(() => {
             it.wrongAttempts[it.wrongAttempts.length - 1]
           }`,
         })
+        seen.add(it.char)
       }
     }
+  }
+  for (const [char, count] of Object.entries(timeoutCounts.value)) {
+    if (seen.has(char)) continue
+    list.push({ id: char, main: char, detail: `超时 ${count} 次` })
   }
   if (list.length === 0) {
     return buildDrillPool(save.value.stats, 10).map((c) => ({
@@ -294,6 +308,7 @@ function resetCommon(): void {
   feedback.value = null
   sticky.value = null
   timeouts.value = 0
+  timeoutCounts.value = {}
   sessionStartAt.value = 0
   charTimer.value = startChar(0)
   now.value = Date.now()
@@ -426,6 +441,14 @@ function onKeydown(e: KeyboardEvent): void {
   handleInput(key)
 }
 
+/** 当前待练项标识：文本为汉字，字根为键位；已完成时返回空串 */
+function currentItemId(): string {
+  if (mode.value === 'zigen') return zigenQueue.value[zigenIndex.value]?.key ?? ''
+  const s = session.value
+  if (!s || s.finished) return ''
+  return s.items[s.cursor]?.char ?? ''
+}
+
 function onTimeoutTick(): void {
   if (!started.value || finished.value) return
   const timeoutMs = level.value?.timeoutMs ?? 4000
@@ -433,6 +456,8 @@ function onTimeoutTick(): void {
   if (r.timedOut) {
     charTimer.value = r.timer
     timeouts.value += 1
+    const id = currentItemId()
+    if (id) timeoutCounts.value[id] = (timeoutCounts.value[id] ?? 0) + 1
     const key = highlight.value
     if (key) setFeedback(key, 'timeout', false)
   }

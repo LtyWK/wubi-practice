@@ -63,7 +63,7 @@ function onPractice(): void {
       </p>
 
       <template v-if="options.length > 0">
-        <h3 class="modal__sub">错误清单</h3>
+        <h3 class="modal__sub">错误与超时清单</h3>
         <MistakePicker :options="options" @update:selected="(ids) => (selected = ids)" />
       </template>
 
