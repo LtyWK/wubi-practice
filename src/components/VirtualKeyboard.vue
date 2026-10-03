@@ -218,7 +218,7 @@ function sizeOf(key: string): number {
 .vk__root {
   font-family: 'WubiRoots', 'WubiRoots98', sans-serif;
   line-height: 1;
-  color: var(--color-text);
+  color: var(--key-root);
 }
 
 /* 字号随矩阵列数自适应（容器查询，旧浏览器回退固定值）

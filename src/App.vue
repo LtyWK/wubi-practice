@@ -68,7 +68,7 @@ function onSchemeChange(e: Event): void {
 .app-header {
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
-  padding: var(--space-3) var(--space-6);
+  padding: var(--space-2) var(--space-6);
 }
 
 /* 导航居中，容器边界与练习页文字/键盘卡片对齐 */
@@ -76,7 +76,7 @@ function onSchemeChange(e: Event): void {
   position: relative;
   max-width: 1000px;
   margin: 0 auto;
-  min-height: 34px;
+  min-height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -161,7 +161,7 @@ function onSchemeChange(e: Event): void {
 
 .app-main {
   flex: 1;
-  padding: var(--space-6);
+  padding: var(--space-3) var(--space-4);
 }
 
 /* 窄屏：标题与导航换行排布，避免重叠 */

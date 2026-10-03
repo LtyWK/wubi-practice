@@ -626,7 +626,7 @@ onUnmounted(() => {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-3);
 }
 
 .keyboard-wrap {
@@ -637,7 +637,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .volume {

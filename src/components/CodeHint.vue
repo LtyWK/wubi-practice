@@ -60,7 +60,7 @@ const { codeHintOn, setCodeHint } = useUiSettings()
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   box-shadow: var(--shadow-sm);
 }
 
@@ -98,7 +98,7 @@ const { codeHintOn, setCodeHint } = useUiSettings()
 
 .hint-card__body {
   text-align: center;
-  margin-top: var(--space-2);
+  margin-top: var(--space-1);
 }
 
 .hint__line {

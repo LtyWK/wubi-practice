@@ -84,8 +84,8 @@ watch(
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 30px;
-  margin-bottom: var(--space-2);
+  min-height: 26px;
+  margin-bottom: var(--space-1);
 }
 
 .text-panel__title {
@@ -128,15 +128,15 @@ watch(
 }
 
 .text-panel__box {
-  max-height: 24vh;
-  min-height: 84px;
+  max-height: 20vh;
+  min-height: 72px;
   overflow-y: auto;
   scrollbar-width: thin;
 }
 
 .text-panel__text {
   font-size: 1.375rem;
-  line-height: 2.8;
+  line-height: 2;
   letter-spacing: 0.15em;
   white-space: normal;
   word-break: break-all;
