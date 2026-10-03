@@ -232,10 +232,9 @@ function sizeOf(key: string): number {
   font-size: 16cqw;
 }
 
-/* 键名格加粗（单线字体用描边） */
+/* 键名格：细线字体描边加粗会糊成一团，改用主题主色强调 */
 .vk__cell--bold .vk__root {
-  font-weight: 700;
-  -webkit-text-stroke: 0.6px currentColor;
+  color: var(--color-primary);
 }
 
 /* 红 / 绿标记：仅字形着色，不加方块背景 */
