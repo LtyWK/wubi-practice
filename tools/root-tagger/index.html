@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>字根标注器</title>
+    <!-- 修改前端文件后请递增版本号，避免浏览器缓存旧脚本 -->
+    <link rel="stylesheet" href="style.css?v=7" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">字根标注器</div>
+      <div class="scheme-tabs" id="schemeTabs"></div>
+      <div class="progress" id="progress"></div>
+      <div class="actions">
+        <button id="btnSuggest" title="按统计数据重新预填（会覆盖当前分配）">按建议重置</button>
+        <button id="btnClear" title="清空全部标记">清空</button>
+        <button id="btnImport">导入</button>
+        <button id="btnExport" class="primary">导出</button>
+        <input type="file" id="fileInput" accept=".json,application/json" hidden />
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="keys-panel">
+        <div class="panel-title">字母键</div>
+        <ul id="keyList"></ul>
+      </aside>
+
+      <section class="pool-panel">
+        <div class="filters">
+          <label><input type="checkbox" id="chkSuggest" /> 只看建议键</label>
+          <label><input type="checkbox" id="chkUnassigned" /> 只看未分配</label>
+          <label><input type="checkbox" id="chkHideIdent" checked /> 隐藏识别码</label>
+          <label><input type="checkbox" id="chkShowBlank" /> 显示空白</label>
+          <input type="search" id="search" placeholder="搜索码点 / 例字" />
+          <span class="filter-count" id="cardCount"></span>
+        </div>
+        <div class="card-pool" id="cardPool"></div>
+      </section>
+
+      <aside class="selected-panel">
+        <div class="panel-title">
+          当前键 <span class="current-key" id="currentKeyLabel">A</span> 的字根
+          <span class="selected-count" id="selectedCount">0</span>
+        </div>
+        <p class="tip">点击卡片池加入 / 移除；拖动条目调整顺序；拖入右侧矩阵排布</p>
+        <ul class="selected-roots" id="selectedRoots"></ul>
+      </aside>
+
+      <section class="layout-panel" id="layoutPanel">
+        <div class="layout-toolbar">
+          <div class="size-tabs" id="sizeTabs">
+            <button data-size="4">4×4</button>
+            <button data-size="5" class="active">5×5</button>
+          </div>
+          <button id="btnAutoFill">自动填充</button>
+          <button id="btnClearLayout">清空</button>
+          <button id="btnExportLayout" class="primary">导出布局</button>
+          <span class="layout-count" id="layoutCount"></span>
+        </div>
+        <p class="layout-tip">拖字根入格，格内拖动交换，右键标记，拖回列表移除</p>
+        <div class="keycap-stage">
+          <div class="keycap">
+            <span class="keycap__letter" id="keycapLetter">A</span>
+            <span class="keycap__name" id="keycapName">工</span>
+            <div class="keycap__grid" id="layoutGrid" data-size="5"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="mark-menu" id="markMenu" hidden>
+      <button data-act="bold"><span class="mark-menu__check"></span>加粗</button>
+      <button data-act="red"><span class="mark-menu__check"></span>标红</button>
+      <button data-act="green"><span class="mark-menu__check"></span>标绿</button>
+    </div>
+
+    <div class="debug-log" id="debugLog" hidden></div>
+
+    <footer class="infobar" id="infobar">
+      <div class="infobar__glyph" id="infoGlyph"></div>
+      <div class="infobar__meta" id="infoMeta">点击卡片进行分配；无输入框焦点时按 A-Y 可快速切换当前键</div>
+    </footer>
+
+    <script src="data/wubi86.js?v=7"></script>
+    <script src="data/wubi98.js?v=7"></script>
+    <script src="app.js?v=7"></script>
+  </body>
+</html>

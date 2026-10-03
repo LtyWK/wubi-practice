@@ -9,3 +9,6 @@ src/data/generated
 .opencode
 .archify
 *.log
+local_workdir
+__pycache__/
+*.pyc
