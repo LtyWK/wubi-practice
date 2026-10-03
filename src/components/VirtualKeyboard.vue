@@ -201,7 +201,7 @@ function sizeOf(key: string): number {
 .vk__grid {
   flex: 1;
   display: grid;
-  gap: 1px;
+  gap: 0;
   align-content: stretch;
   min-height: 0;
   container-type: inline-size;
@@ -221,14 +221,15 @@ function sizeOf(key: string): number {
   color: var(--color-text);
 }
 
-/* 字号随矩阵列数自适应（容器查询，旧浏览器回退固定值） */
+/* 字号随矩阵列数自适应（容器查询，旧浏览器回退固定值）
+ * 字形高度约为字号 0.66~0.78em，字号取格子的 80% 左右使字根饱满 */
 .vk__grid[data-size='4'] .vk__root {
-  font-size: 0.6875rem;
-  font-size: 13.5cqw;
+  font-size: 0.9375rem;
+  font-size: 20cqw;
 }
 .vk__grid[data-size='5'] .vk__root {
-  font-size: 0.5rem;
-  font-size: 10.5cqw;
+  font-size: 0.75rem;
+  font-size: 16cqw;
 }
 
 /* 键名格加粗（单线字体用描边） */
@@ -398,10 +399,10 @@ function sizeOf(key: string): number {
   }
 
   .vk__grid[data-size='4'] .vk__root {
-    font-size: 12cqw;
+    font-size: 18cqw;
   }
   .vk__grid[data-size='5'] .vk__root {
-    font-size: 9.5cqw;
+    font-size: 14cqw;
   }
 
   .vk__letter {
