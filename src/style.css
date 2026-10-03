@@ -45,6 +45,9 @@
   --root-mark-green: #1a7f4b;
   --root-mark-green-bg: #eff8f2;
   --root-mark-green-border: #bcdcc8;
+  /* 键盘键帽渐变（浅色主题） */
+  --keycap-top: #fbfcfd;
+  --keycap-bottom: #eef1f5;
   --flash-ok: #b7dcc4;
   --flash-bad: #e8bcbc;
   --flash-timeout: #ecd9a6;
@@ -118,6 +121,9 @@ html[data-theme='dark'] {
   --root-mark-green: #8fc7a6;
   --root-mark-green-bg: #1f2c25;
   --root-mark-green-border: #3f6b52;
+  /* 键盘键帽渐变（深色主题） */
+  --keycap-top: #2b323b;
+  --keycap-bottom: #232830;
   --flash-ok: #3f6b52;
   --flash-bad: #6b4141;
   --flash-timeout: #6b5a33;

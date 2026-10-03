@@ -169,7 +169,7 @@ function sizeOf(key: string): number {
   padding: 4px 4px 2px;
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: linear-gradient(#fbfcfd, #eef1f5);
+  background: linear-gradient(var(--keycap-top), var(--keycap-bottom));
   color: var(--color-text);
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -237,15 +237,9 @@ function sizeOf(key: string): number {
   -webkit-text-stroke: 0.6px currentColor;
 }
 
-/* 红 / 绿标记 */
-.vk__cell--red {
-  background: var(--root-mark-red-bg);
-}
+/* 红 / 绿标记：仅字形着色，不加方块背景 */
 .vk__cell--red .vk__root {
   color: var(--root-mark-red);
-}
-.vk__cell--green {
-  background: var(--root-mark-green-bg);
 }
 .vk__cell--green .vk__root {
   color: var(--root-mark-green);
@@ -347,7 +341,7 @@ function sizeOf(key: string): number {
     background: var(--flash-ok);
   }
   100% {
-    background: linear-gradient(#fbfcfd, #eef1f5);
+    background: linear-gradient(var(--keycap-top), var(--keycap-bottom));
   }
 }
 
@@ -356,7 +350,7 @@ function sizeOf(key: string): number {
     background: var(--flash-bad);
   }
   100% {
-    background: linear-gradient(#fbfcfd, #eef1f5);
+    background: linear-gradient(var(--keycap-top), var(--keycap-bottom));
   }
 }
 
@@ -365,7 +359,7 @@ function sizeOf(key: string): number {
     background: var(--flash-timeout);
   }
   100% {
-    background: linear-gradient(#fbfcfd, #eef1f5);
+    background: linear-gradient(var(--keycap-top), var(--keycap-bottom));
   }
 }
 
