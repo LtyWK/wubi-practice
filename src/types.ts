@@ -1,3 +1,6 @@
+/** 五笔方案 id（86 版 / 98 王码） */
+export type WubiScheme = 'wubi86' | 'wubi98'
+
 /** 单字码表条目（由 scripts/build-chars.ts 生成） */
 export interface CharEntry {
   /** 全码，如 "vb" */
@@ -58,24 +61,32 @@ export interface Article {
   paragraphs: string[]
 }
 
-/** 字根表条目（由 zigen.json 的口诀/注释 + zigen-glyphs.json 的字形合并生成） */
+/** 键盘布局单元（由 scripts/build-zigen.ts 生成） */
+export interface LayoutCell {
+  /** 字形（PUA 字符，由对应字根字体渲染） */
+  cp: string
+  /** 加粗显示（通常为键名字根） */
+  bold: boolean
+  /** 标记类型（仅标记，具体色值随主题） */
+  mark: 'red' | 'green' | null
+}
+
+/** 字根表条目（严格来自人工配置，不做字根推理） */
 export interface ZigenItem {
   /** 键位，如 "g" */
   key: string
-  /** 键名字根（键盘左上角） */
+  /** 键名字根（如 "王"） */
   name: string
-  /** 一级简码（键盘右上角） */
+  /** 一级简码（如 "一"） */
   short1: string
-  /** 键盘主体字形（≤15，不含键名，相似相邻） */
-  glyphs: string[]
-  /** 完整字形（打字训练用） */
-  all: string[]
-  /** 分区：横/竖/撇/捺/折 */
-  area: string
+  /** 分区：1 横 2 竖 3 撇 4 捺 5 折 */
+  area: number
   /** 助记口诀 */
   mnemonic: string
-  /** 字形注释（如 革字底、青字头） */
-  notes?: { root: string; note: string }[]
+  /** 字根列表（PUA 字符，用于字根练习出题） */
+  roots: string[]
+  /** 键盘布局（矩阵尺寸 + 格子） */
+  layout: { size: number; cells: (LayoutCell | null)[] }
 }
 
 /** 进度数据 */

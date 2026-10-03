@@ -1,4 +1,4 @@
-import type { LevelConfig, RadicalWeight } from '@/types'
+import type { LevelConfig, RadicalWeight, WubiScheme } from '@/types'
 import { loadAllChars, loadFreq1Chars } from './loader'
 
 /** 是否汉字 */
@@ -88,10 +88,10 @@ export function weightedSequence(items: RadicalWeight[], count: number): Radical
   return out
 }
 
-/** 按关卡配置构建出题池（单字关） */
-export async function buildPool(lv: LevelConfig): Promise<string[]> {
+/** 按关卡配置构建出题池（单字关），码表按方案加载 */
+export async function buildPool(lv: LevelConfig, scheme: WubiScheme): Promise<string[]> {
   if (lv.source === 'short1' || lv.source === 'short2') {
-    const all = await loadAllChars()
+    const all = await loadAllChars(scheme)
     const len = lv.source === 'short1' ? 1 : 2
     let pool = Object.keys(all).filter((c) => all[c].short.some((s) => s.length === len))
     if (lv.starts) {
@@ -103,7 +103,7 @@ export async function buildPool(lv: LevelConfig): Promise<string[]> {
     }
     return pool
   }
-  const freq = await loadFreq1Chars()
+  const freq = await loadFreq1Chars(scheme)
   let pool = Object.keys(freq)
   if (lv.source === 'idcode') pool = pool.filter((c) => freq[c].idcode)
   if (lv.starts) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { KeyFeedback } from '@/types'
+import type { KeyFeedback, ZigenItem } from '@/types'
 
 const props = withDefaults(
   defineProps<{
@@ -9,12 +9,8 @@ const props = withDefaults(
     feedback?: KeyFeedback | null
     /** 常亮状态（最近一次输入结果） */
     sticky?: KeyFeedback | null
-    /** 键位 → 键名字根（左上角） */
-    names?: Record<string, string>
-    /** 键位 → 主体字形（≤15，3×5 排列） */
-    roots?: Record<string, string[]>
-    /** 键位 → 一级简码（右上角） */
-    short1?: Record<string, string>
+    /** 键位 → 字根表条目（含键盘布局，由当前方案提供） */
+    zigen?: Record<string, ZigenItem>
     /** 禁用态 */
     disabled?: boolean
   }>(),
@@ -22,9 +18,7 @@ const props = withDefaults(
     highlight: '',
     feedback: null,
     sticky: null,
-    names: undefined,
-    roots: undefined,
-    short1: undefined,
+    zigen: undefined,
     disabled: false,
   },
 )
@@ -70,6 +64,20 @@ function keyClass(key: string): Record<string, boolean> {
     [`vk__key--area-${area ?? 0}`]: true,
   }
 }
+
+/** 取键位的布局格子（补齐到 size²） */
+function cellsOf(key: string): (ZigenItem['layout']['cells'][number])[] {
+  const z = props.zigen?.[key]
+  if (!z) return []
+  const total = z.layout.size * z.layout.size
+  const cells = z.layout.cells.slice(0, total)
+  while (cells.length < total) cells.push(null)
+  return cells
+}
+
+function sizeOf(key: string): number {
+  return props.zigen?.[key]?.layout.size ?? 5
+}
 </script>
 
 <template>
@@ -84,15 +92,29 @@ function keyClass(key: string): Record<string, boolean> {
         :aria-label="`${key.toUpperCase()} 键`"
         @pointerdown.prevent="onPress(key)"
       >
-        <!-- 顶部一行：左上键名字根 · 中间字母 · 右上简码 -->
-        <span class="vk__letter">{{ key.toUpperCase() }}</span>
-        <span class="vk__name">{{ props.names?.[key] ?? '' }}</span>
-        <span v-if="props.short1?.[key]" class="vk__short">{{ props.short1[key] }}</span>
-        <!-- 主体：3 行 × 5 列其他字根 -->
-        <span class="vk__roots">
-          <span v-for="(root, i) in props.roots?.[key] ?? []" :key="i" class="vk__root">
-            {{ root }}
+        <!-- 字根矩阵 -->
+        <span
+          class="vk__grid"
+          :data-size="sizeOf(key)"
+          :style="{ gridTemplateColumns: `repeat(${sizeOf(key)}, 1fr)` }"
+        >
+          <span
+            v-for="(cell, i) in cellsOf(key)"
+            :key="i"
+            class="vk__cell"
+            :class="{
+              'vk__cell--bold': cell?.bold,
+              'vk__cell--red': cell?.mark === 'red',
+              'vk__cell--green': cell?.mark === 'green',
+            }"
+          >
+            <span v-if="cell" class="vk__root">{{ cell.cp }}</span>
           </span>
+        </span>
+        <!-- 底部信息条：字母 + 一级简码 -->
+        <span class="vk__foot">
+          <span class="vk__letter">{{ key.toUpperCase() }}</span>
+          <span class="vk__short">{{ props.zigen?.[key]?.short1 ?? '' }}</span>
         </span>
       </span>
     </div>
@@ -110,10 +132,10 @@ function keyClass(key: string): Record<string, boolean> {
 
 <style scoped>
 .vk {
-  --vk-gap: 8px;
+  --vk-gap: 7px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   align-items: center;
   user-select: none;
   background: var(--color-surface);
@@ -135,24 +157,25 @@ function keyClass(key: string): Record<string, boolean> {
   width: 100%;
 }
 
+/* 键帽：加高，上方字根矩阵 + 下方信息条 */
 .vk__key {
   position: relative;
   flex: 0 0 auto;
-  /* 10 列自适应铺满，桌面不超过 84px */
   width: calc((100% - 9 * var(--vk-gap)) / 10);
-  max-width: 84px;
-  aspect-ratio: 84 / 88;
+  max-width: 92px;
+  aspect-ratio: 1 / 1.18;
   display: flex;
   flex-direction: column;
-  padding: 4px 5px 2px;
-  border: 2px solid var(--color-border);
+  padding: 4px 4px 2px;
+  border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-key-bg);
+  background: linear-gradient(#fbfcfd, #eef1f5);
   color: var(--color-text);
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
   cursor: pointer;
+  overflow: hidden;
   transition:
     background 0.15s,
     border-color 0.15s,
@@ -167,70 +190,92 @@ function keyClass(key: string): Record<string, boolean> {
   transform: scale(0.96);
 }
 
-/* 五区用边框色区分（低饱和） */
-.vk__key--area-1 {
-  border-color: var(--area-1);
-}
-.vk__key--area-2 {
-  border-color: var(--area-2);
-}
-.vk__key--area-3 {
-  border-color: var(--area-3);
-}
-.vk__key--area-4 {
-  border-color: var(--area-4);
-}
-.vk__key--area-5 {
-  border-color: var(--area-5);
+/* 五区边框色 */
+.vk__key--area-1 { border-color: var(--area-1); }
+.vk__key--area-2 { border-color: var(--area-2); }
+.vk__key--area-3 { border-color: var(--area-3); }
+.vk__key--area-4 { border-color: var(--area-4); }
+.vk__key--area-5 { border-color: var(--area-5); }
+
+/* 字根矩阵 */
+.vk__grid {
+  flex: 1;
+  display: grid;
+  gap: 1px;
+  align-content: stretch;
+  min-height: 0;
+  container-type: inline-size;
 }
 
-/* 顶部一行：键名（左） · 字母（中） · 简码（右） */
-.vk__letter {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+.vk__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  border-radius: 3px;
+}
+
+.vk__root {
+  font-family: 'WubiRoots', 'WubiRoots98', sans-serif;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+/* 字号随矩阵列数自适应（容器查询，旧浏览器回退固定值） */
+.vk__grid[data-size='4'] .vk__root {
   font-size: 0.75rem;
+  font-size: 17cqw;
+}
+.vk__grid[data-size='5'] .vk__root {
+  font-size: 0.5625rem;
+  font-size: 14cqw;
+}
+
+/* 键名格加粗（单线字体用描边） */
+.vk__cell--bold .vk__root {
+  font-weight: 700;
+  -webkit-text-stroke: 0.6px currentColor;
+}
+
+/* 红 / 绿标记 */
+.vk__cell--red {
+  background: var(--root-mark-red-bg);
+}
+.vk__cell--red .vk__root {
+  color: var(--root-mark-red);
+}
+.vk__cell--green {
+  background: var(--root-mark-green-bg);
+}
+.vk__cell--green .vk__root {
+  color: var(--root-mark-green);
+}
+
+/* 底部信息条 */
+.vk__foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+  padding-top: 2px;
+  border-top: 1px solid var(--color-border);
+  min-height: 14px;
+}
+
+.vk__letter {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.625rem;
   font-weight: 600;
   color: var(--color-text-muted);
   line-height: 1;
 }
 
-.vk__name {
-  position: absolute;
-  top: 6px;
-  left: 7px;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
 .vk__short {
-  position: absolute;
-  top: 6px;
-  right: 7px;
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
   font-weight: 700;
-  line-height: 1.1;
   color: var(--color-primary);
-}
-
-/* 主体：3 行 × 5 列（紧凑排列） */
-.vk__roots {
-  margin-top: 17px;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-auto-rows: 1fr;
-  align-items: center;
-  justify-items: center;
-  width: 100%;
-  flex: 1;
-}
-
-.vk__root {
-  font-size: 0.625rem;
-  line-height: 1.2;
-  color: var(--color-text-muted);
+  line-height: 1;
 }
 
 /* 下一步高亮：呼吸 */
@@ -290,11 +335,9 @@ function keyClass(key: string): Record<string, boolean> {
 .vk__key--flash-ok {
   animation: vk-flash-ok 0.35s ease-out;
 }
-
 .vk__key--flash-bad {
   animation: vk-flash-bad 0.35s ease-out;
 }
-
 .vk__key--flash-timeout {
   animation: vk-flash-timeout 0.45s ease-out;
 }
@@ -304,7 +347,7 @@ function keyClass(key: string): Record<string, boolean> {
     background: var(--flash-ok);
   }
   100% {
-    background: var(--color-key-bg);
+    background: linear-gradient(#fbfcfd, #eef1f5);
   }
 }
 
@@ -313,7 +356,7 @@ function keyClass(key: string): Record<string, boolean> {
     background: var(--flash-bad);
   }
   100% {
-    background: var(--color-key-bg);
+    background: linear-gradient(#fbfcfd, #eef1f5);
   }
 }
 
@@ -322,7 +365,7 @@ function keyClass(key: string): Record<string, boolean> {
     background: var(--flash-timeout);
   }
   100% {
-    background: var(--color-key-bg);
+    background: linear-gradient(#fbfcfd, #eef1f5);
   }
 }
 
@@ -335,7 +378,7 @@ function keyClass(key: string): Record<string, boolean> {
   width: min(460px, 100%);
   max-width: 100%;
   aspect-ratio: auto;
-  height: 46px;
+  height: 44px;
   align-items: center;
   justify-content: center;
   font-size: var(--font-base);
@@ -344,56 +387,39 @@ function keyClass(key: string): Record<string, boolean> {
   padding: 0;
 }
 
-/* 窄屏：精简主体字根，按键自适应铺满，避免溢出 */
+/* 窄屏：保留字根矩阵 + 字母 + 一级简码，压缩间距 */
 @media (max-width: 640px) {
   .vk {
-    --vk-gap: 4px;
-    gap: 4px;
+    --vk-gap: 3px;
+    gap: 3px;
     padding: var(--space-2);
     border-radius: var(--radius-md);
   }
 
   .vk__key {
-    height: 40px;
-    aspect-ratio: auto;
-    padding: 2px 3px;
-    border-width: 1.5px;
+    padding: 2px 2px 1px;
+    border-width: 1px;
     border-radius: var(--radius-sm);
+    aspect-ratio: 1 / 1.12;
   }
 
-  .vk__roots {
-    display: none;
+  .vk__grid[data-size='4'] .vk__root {
+    font-size: 15cqw;
+  }
+  .vk__grid[data-size='5'] .vk__root {
+    font-size: 12.5cqw;
   }
 
   .vk__letter {
-    top: auto;
-    bottom: 3px;
-    font-size: 0.8125rem;
+    font-size: 0.5rem;
   }
-
-  .vk__name {
-    top: 3px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.6875rem;
-  }
-
   .vk__short {
-    top: 3px;
-    right: 3px;
     font-size: 0.5625rem;
   }
 
   .vk__key--space {
     width: 90%;
-    height: 34px;
-  }
-}
-
-/* 极窄屏：再隐藏一级简码，只留字母 + 键名 */
-@media (max-width: 400px) {
-  .vk__short {
-    display: none;
+    height: 32px;
   }
 }
 </style>

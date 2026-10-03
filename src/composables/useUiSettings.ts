@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import type { WubiScheme } from '@/types'
 
 /** 文本对齐方式 */
 export type TextAlign = 'center' | 'left'
@@ -11,6 +12,7 @@ const SOUND_KEY = 'wubi.ui.sound'
 const VOLUME_KEY = 'wubi.ui.volume'
 const HINTS_KEY = 'wubi.ui.hints'
 const CODEHINT_KEY = 'wubi.ui.codehint'
+const SCHEME_KEY = 'wubi.ui.scheme'
 
 /** 默认音量（0-1） */
 const DEFAULT_VOLUME = 1
@@ -50,6 +52,8 @@ const volume = ref<number>(initialVolume())
 const hintsOn = ref<boolean>(read(HINTS_KEY) !== 'off')
 /** 拆字提示卡片是否展开显示 */
 const codeHintOn = ref<boolean>(read(CODEHINT_KEY) !== 'off')
+/** 当前输入方案（默认 86 版） */
+const scheme = ref<WubiScheme>(read(SCHEME_KEY) === 'wubi98' ? 'wubi98' : 'wubi86')
 
 function systemPrefersDark(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
@@ -80,12 +84,14 @@ export function useUiSettings(): {
   volume: typeof volume
   hintsOn: typeof hintsOn
   codeHintOn: typeof codeHintOn
+  scheme: typeof scheme
   setAlign: (value: TextAlign) => void
   setTheme: (value: ThemeMode) => void
   setSound: (value: boolean) => void
   setVolume: (value: number) => void
   setHints: (value: boolean) => void
   setCodeHint: (value: boolean) => void
+  setScheme: (value: WubiScheme) => void
   applyTheme: () => void
 } {
   function setAlign(value: TextAlign): void {
@@ -120,6 +126,12 @@ export function useUiSettings(): {
     write(CODEHINT_KEY, value ? 'on' : 'off')
   }
 
+  /** 切换输入方案（仅写偏好；保存进度与刷新页面由调用方处理） */
+  function setScheme(value: WubiScheme): void {
+    scheme.value = value
+    write(SCHEME_KEY, value)
+  }
+
   return {
     align,
     theme,
@@ -127,12 +139,14 @@ export function useUiSettings(): {
     volume,
     hintsOn,
     codeHintOn,
+    scheme,
     setAlign,
     setTheme,
     setSound,
     setVolume,
     setHints,
     setCodeHint,
+    setScheme,
     applyTheme,
   }
 }

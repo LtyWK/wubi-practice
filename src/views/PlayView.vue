@@ -12,7 +12,7 @@ import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
 import { checkTimeout, elapsed, startChar, type CharTimer } from '@/engine/timer'
-import { ensureWubi86, wubi86 } from '@/schemes/wubi86'
+import { ensureScheme, getScheme } from '@/schemes/registry'
 import { playKeySound } from '@/audio/sound'
 import { useFreeText } from '@/composables/useFreeText'
 import { useUiSettings } from '@/composables/useUiSettings'
@@ -38,7 +38,10 @@ const { isStageUnlocked, recordResult } = useLevels()
 const { record, markMastered } = useMistakes()
 const { save, recordCharDone, recordCharError } = useSave()
 const { freeTitle, freeText } = useFreeText()
-const { soundOn, volume, setVolume, hintsOn, setHints } = useUiSettings()
+const { soundOn, volume, setVolume, hintsOn, setHints, scheme: uiScheme } = useUiSettings()
+
+/** 当前输入方案实现（顶部下拉切换方案后刷新页面生效） */
+const scheme = computed(() => getScheme(uiScheme.value))
 const volumeOpen = ref(false)
 
 function onVolumeInput(e: Event): void {
@@ -57,33 +60,6 @@ const level = computed<LevelConfig | undefined>(() =>
 const isZigen = computed(() => level.value?.type === 'zigen')
 const mode = computed<'zigen' | 'text'>(() => (isZigen.value ? 'zigen' : 'text'))
 const articleMode = computed(() => level.value?.type === 'article' || isFree.value)
-
-/** 键盘主体字形（每键 ≤15 个） */
-const keyRoots = computed<Record<string, string[]>>(() => {
-  const out: Record<string, string[]> = {}
-  for (const [key, item] of Object.entries(zigenMap.value)) {
-    out[key] = item.glyphs
-  }
-  return out
-})
-
-/** 键名字根（键盘左上角） */
-const keyNames = computed<Record<string, string>>(() => {
-  const out: Record<string, string> = {}
-  for (const [key, item] of Object.entries(zigenMap.value)) {
-    out[key] = item.name
-  }
-  return out
-})
-
-/** 一级简码（键盘右上角） */
-const keyShorts = computed<Record<string, string>>(() => {
-  const out: Record<string, string> = {}
-  for (const [key, item] of Object.entries(zigenMap.value)) {
-    out[key] = item.short1
-  }
-  return out
-})
 
 // ---------- 通用状态 ----------
 const now = ref(Date.now())
@@ -156,8 +132,8 @@ function stateOf(state: string, wrong: boolean): TextCharState {
 /** 从键位池生成字根练习题：键位均匀分布且不连续重复，每题取该键的随机字根 */
 function makeZigenTasks(pool: string[], count: number): ZigenTask[] {
   return randomSequence(pool, count).map((key) => {
-    // 打字训练使用完整字形（all）
-    const roots = zigenMap.value[key]?.all ?? []
+    // 打字训练使用完整字根列表（roots）
+    const roots = zigenMap.value[key]?.roots ?? []
     const root =
       roots.length > 0 ? roots[Math.floor(Math.random() * roots.length)] : key.toUpperCase()
     return { key, root }
@@ -256,7 +232,7 @@ const currentHint = computed(() => {
   if (!s || s.finished) return null
   const item = s.items[s.cursor]
   if (!item) return null
-  return { char: item.char, code: item.code, items: wubi86.hint(item.char), input: s.input }
+  return { char: item.char, code: item.code, items: scheme.value.hint(item.char), input: s.input }
 })
 
 // ---------- 达标与结算 ----------
@@ -341,7 +317,7 @@ function initText(chars: string[], isDrill = false): void {
   resetCommon()
   drill.value = isDrill
   streak.value = {}
-  session.value = createSession(chars, wubi86, 0)
+  session.value = createSession(chars, scheme.value, 0)
   displayMap.value = chars.map((c, i) => ({ char: c, input: i }))
 }
 
@@ -525,7 +501,7 @@ async function startRound(): Promise<void> {
   } else if (lv.type === 'article') {
     await initArticle(lv)
   } else {
-    const pool = await buildPool(lv)
+    const pool = await buildPool(lv, uiScheme.value)
     initText(sample(pool, lv.length))
   }
 }
@@ -536,8 +512,11 @@ function restart(): void {
 }
 
 onMounted(async () => {
-  await ensureWubi86()
-  const [zigenData, weights] = await Promise.all([loadZigen(), loadRadicalWeights()])
+  await ensureScheme(uiScheme.value)
+  const [zigenData, weights] = await Promise.all([
+    loadZigen(uiScheme.value),
+    loadRadicalWeights(uiScheme.value),
+  ])
   zigenMap.value = Object.fromEntries(zigenData.map((z) => [z.key, z]))
   radicalWeights.value = weights
 
@@ -621,9 +600,7 @@ onUnmounted(() => {
         :highlight="highlight"
         :feedback="feedback"
         :sticky="sticky"
-        :names="keyNames"
-        :roots="keyRoots"
-        :short1="keyShorts"
+        :zigen="zigenMap"
         :disabled="finished"
         @press="handleInput"
       />

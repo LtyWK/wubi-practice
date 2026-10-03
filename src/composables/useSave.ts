@@ -1,11 +1,30 @@
 import { ref } from 'vue'
-import type { CharStat, LevelResult, SaveV2 } from '@/types'
+import type { CharStat, LevelResult, SaveV2, WubiScheme } from '@/types'
 
-/** V2 存档键 */
-const KEY = 'wubi.v2.save'
-/** V1 旧键（仅用于首次迁移） */
+/** 86 版 V2 存档键（兼容既有数据） */
+const KEY_86 = 'wubi.v2.save'
+/** 方案偏好键（与 useUiSettings 保持一致） */
+const SCHEME_KEY = 'wubi.ui.scheme'
+/** V1 旧键（仅用于 86 首次迁移） */
 const V1_PROGRESS = 'wubi.v1.progress'
 const V1_MISTAKES = 'wubi.v1.mistakes'
+
+/** 读取当前方案偏好（切换方案通过刷新页面生效，模块加载时确定一次即可） */
+function currentScheme(): WubiScheme {
+  try {
+    return localStorage.getItem(SCHEME_KEY) === 'wubi98' ? 'wubi98' : 'wubi86'
+  } catch {
+    return 'wubi86'
+  }
+}
+
+/** 当前方案存档键：86 沿用旧键，其余方案独立分键 */
+function storageKey(scheme: WubiScheme): string {
+  return scheme === 'wubi86' ? KEY_86 : `${KEY_86}.${scheme}`
+}
+
+const scheme = currentScheme()
+const KEY = storageKey(scheme)
 
 function emptySave(): SaveV2 {
   return {
@@ -81,7 +100,8 @@ function loadSave(): SaveV2 {
       // 损坏则回退迁移
     }
   }
-  return migrateFromV1()
+  // V1 迁移仅适用于 86 版旧数据
+  return scheme === 'wubi86' ? migrateFromV1() : emptySave()
 }
 
 /** 模块级共享存档状态 */
