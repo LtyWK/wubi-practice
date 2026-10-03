@@ -203,8 +203,10 @@ input[type='range'] {
 body {
   background: var(--color-bg);
   color: var(--color-text);
+  /* 两个字根字体按 unicode-range 自动匹配：86（BMP PUA）与 98（SPUA-B） */
   font-family:
     'WubiRoots',
+    'WubiRoots98',
     system-ui,
     -apple-system,
     'Segoe UI',

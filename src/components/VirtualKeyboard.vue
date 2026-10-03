@@ -223,12 +223,12 @@ function sizeOf(key: string): number {
 
 /* 字号随矩阵列数自适应（容器查询，旧浏览器回退固定值） */
 .vk__grid[data-size='4'] .vk__root {
-  font-size: 0.75rem;
-  font-size: 17cqw;
+  font-size: 0.6875rem;
+  font-size: 13.5cqw;
 }
 .vk__grid[data-size='5'] .vk__root {
-  font-size: 0.5625rem;
-  font-size: 14cqw;
+  font-size: 0.5rem;
+  font-size: 10.5cqw;
 }
 
 /* 键名格加粗（单线字体用描边） */
@@ -404,10 +404,10 @@ function sizeOf(key: string): number {
   }
 
   .vk__grid[data-size='4'] .vk__root {
-    font-size: 15cqw;
+    font-size: 12cqw;
   }
   .vk__grid[data-size='5'] .vk__root {
-    font-size: 12.5cqw;
+    font-size: 9.5cqw;
   }
 
   .vk__letter {
