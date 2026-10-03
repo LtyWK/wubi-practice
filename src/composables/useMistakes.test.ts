@@ -1,4 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// 测试固定为 86 版方案（存档键 wubi.v2.save），与默认方案解耦
+vi.hoisted(() => {
+  localStorage.setItem('wubi.ui.scheme', 'wubi86')
+})
+
 import { useMistakes } from './useMistakes'
 import { flushSave } from './useSave'
 

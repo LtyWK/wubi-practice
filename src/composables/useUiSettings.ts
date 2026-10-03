@@ -52,8 +52,8 @@ const volume = ref<number>(initialVolume())
 const hintsOn = ref<boolean>(read(HINTS_KEY) !== 'off')
 /** 拆字提示卡片是否展开显示 */
 const codeHintOn = ref<boolean>(read(CODEHINT_KEY) !== 'off')
-/** 当前输入方案（默认 86 版） */
-const scheme = ref<WubiScheme>(read(SCHEME_KEY) === 'wubi98' ? 'wubi98' : 'wubi86')
+/** 当前输入方案（默认 98 王码） */
+const scheme = ref<WubiScheme>(read(SCHEME_KEY) === 'wubi86' ? 'wubi86' : 'wubi98')
 
 function systemPrefersDark(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'

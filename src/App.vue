@@ -29,8 +29,8 @@ function onSchemeChange(e: Event): void {
             aria-label="输入方案"
             @change="onSchemeChange"
           >
-            <option value="wubi86">86 版</option>
             <option value="wubi98">98 王码</option>
+            <option value="wubi86">86 版</option>
           </select>
         </div>
         <nav class="app-nav">

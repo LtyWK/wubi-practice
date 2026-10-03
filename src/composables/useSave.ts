@@ -12,9 +12,9 @@ const V1_MISTAKES = 'wubi.v1.mistakes'
 /** 读取当前方案偏好（切换方案通过刷新页面生效，模块加载时确定一次即可） */
 function currentScheme(): WubiScheme {
   try {
-    return localStorage.getItem(SCHEME_KEY) === 'wubi98' ? 'wubi98' : 'wubi86'
+    return localStorage.getItem(SCHEME_KEY) === 'wubi86' ? 'wubi86' : 'wubi98'
   } catch {
-    return 'wubi86'
+    return 'wubi98'
   }
 }
 

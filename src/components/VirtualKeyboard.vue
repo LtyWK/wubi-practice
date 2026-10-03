@@ -245,28 +245,29 @@ function sizeOf(key: string): number {
   color: var(--root-mark-green);
 }
 
-/* 底部信息条 */
+/* 底部信息条：字母与一级简码居中相邻排列 */
 .vk__foot {
   flex: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 7px;
   margin-top: 2px;
   padding-top: 2px;
   border-top: 1px solid var(--color-border);
-  min-height: 14px;
+  min-height: 17px;
 }
 
 .vk__letter {
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-text-muted);
   line-height: 1;
 }
 
 .vk__short {
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--color-primary);
   line-height: 1;
@@ -405,10 +406,10 @@ function sizeOf(key: string): number {
   }
 
   .vk__letter {
-    font-size: 0.5rem;
+    font-size: 0.625rem;
   }
   .vk__short {
-    font-size: 0.5625rem;
+    font-size: 0.6875rem;
   }
 
   .vk__key--space {
