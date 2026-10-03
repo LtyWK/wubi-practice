@@ -1,0 +1,1669 @@
+{
+  "scheme": "wubi98",
+  "label": "98王码",
+  "layouts": {
+    "g": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰂷",
+          "bold": true,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰂶",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰁽",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀞",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂸",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂹",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀟",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀠",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂅",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀡",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "f": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰂮",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰂯",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂰",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂭",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰂱",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀛",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂳",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀜",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂴",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂲",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀙",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂵",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        {
+          "cp": "󰀚",
+          "bold": false,
+          "mark": "green"
+        }
+      ]
+    },
+    "d": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰂝",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰂣",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂤",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂜",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰂟",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂠",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂡",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁼",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀎",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀍",
+          "bold": false,
+          "mark": "green"
+        },
+        {
+          "cp": "󰂞",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂢",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "s": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰄅",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰄉",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰄆",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null,
+        {
+          "cp": "󰄇",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄈",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰄊",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "a": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰂆",
+          "bold": true,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰀄",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂋",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂇",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀃",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀂",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀁",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄖",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂉",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂊",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂌",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰁺",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀀",
+          "bold": false,
+          "mark": null
+        },
+        null
+      ]
+    },
+    "h": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰂼",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰀣",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰂺",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰂽",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀥",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂻",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂿",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂾",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁾",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀤",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃀",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "j": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰃊",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰃋",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃉",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀭",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰀰",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀱",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀮",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀯",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃌",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃍",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀳",
+          "bold": false,
+          "mark": "green"
+        },
+        {
+          "cp": "󰀲",
+          "bold": false,
+          "mark": "green"
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "k": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰃏",
+          "bold": true,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰀶",
+          "bold": false,
+          "mark": "red"
+        },
+        null,
+        null,
+        null,
+        null,
+        {
+          "cp": "󰃎",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰀸",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "l": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰃐",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰃑",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃒",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀷",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃓",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃔",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀹",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀺",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃕",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃖",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃗",
+          "bold": false,
+          "mark": "green"
+        },
+        {
+          "cp": "󰀻",
+          "bold": false,
+          "mark": "green"
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "m": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰃘",
+          "bold": true,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰀿",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃜",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃙",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰀽",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀼",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃚",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃛",
+          "bold": false,
+          "mark": "green"
+        },
+        null,
+        {
+          "cp": "󰀾",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "t": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰄌",
+          "bold": true,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰁿",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄋",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰄍",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰄐",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄎",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰄏",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "r": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰃽",
+          "bold": true,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰃼",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁤",
+          "bold": false,
+          "mark": "red"
+        },
+        null,
+        {
+          "cp": "󰃿",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂀",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃾",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄄",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄀",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄁",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄂",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "e": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰂧",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰀐",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂦",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂥",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰂨",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀒",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂫",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂬",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀖",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀔",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀕",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰀓",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂩",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂪",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀗",
+          "bold": false,
+          "mark": null
+        }
+      ]
+    },
+    "w": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰄤",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰄥",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰄦",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄨",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁰",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰁯",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰁱",
+          "bold": false,
+          "mark": "green"
+        },
+        null,
+        {
+          "cp": "󰄧",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "q": {
+      "size": 5,
+      "cells": [
+        {
+          "cp": "󰃴",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰃵",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃶",
+          "bold": false,
+          "mark": "green"
+        },
+        {
+          "cp": "󰁚",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃷",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃸",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄾",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁛",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃹",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁝",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃻",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁡",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰁢",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁠",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁞",
+          "bold": false,
+          "mark": "green"
+        },
+        {
+          "cp": "󰁟",
+          "bold": false,
+          "mark": "green"
+        },
+        {
+          "cp": "󰃺",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁜",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "y": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰄳",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰄵",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄼",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄲",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰄴",
+          "bold": false,
+          "mark": "green"
+        },
+        {
+          "cp": "󰄶",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁸",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁷",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄸",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄷",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄹",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀴",
+          "bold": false,
+          "mark": "green"
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "u": {
+      "size": 5,
+      "cells": [
+        {
+          "cp": "󰄓",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰄑",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄒",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁨",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁦",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰄔",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄘",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁩",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄿",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄗",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄕",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄜",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄝",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄙",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁪",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄛",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        {
+          "cp": "󰄚",
+          "bold": false,
+          "mark": "green"
+        },
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "i": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰃂",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰃃",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀨",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃁",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰃈",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀫",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀪",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀩",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃅",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃆",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀧",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃇",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "o": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰃩",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰁖",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁗",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃨",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃬",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰁘",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃫",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰁙",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃪",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "p": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰃭",
+          "bold": true,
+          "mark": null
+        },
+        null,
+        {
+          "cp": "󰃱",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃰",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃮",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰃲",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃯",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰃳",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "n": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰃞",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰃟",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃠",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃝",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰁁",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁂",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃡",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄻",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃧",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁃",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁄",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁆",
+          "bold": false,
+          "mark": "green"
+        },
+        {
+          "cp": "󰃢",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃣",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃤",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰃥",
+          "bold": false,
+          "mark": null
+        }
+      ]
+    },
+    "b": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰂍",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰂎",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂒",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄽",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰁹",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀇",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂏",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀈",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂑",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂕",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂓",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂖",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂐",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂔",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂗",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀆",
+          "bold": false,
+          "mark": null
+        }
+      ]
+    },
+    "v": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰄟",
+          "bold": true,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰄞",
+          "bold": false,
+          "mark": "red"
+        },
+        {
+          "cp": "󰄠",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁭",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄢",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁬",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄡",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄣",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁮",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰅡",
+          "bold": false,
+          "mark": "green"
+        },
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "c": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰂘",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰀉",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁻",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂙",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂚",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰂛",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀊",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰀋",
+          "bold": false,
+          "mark": "green"
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "x": {
+      "size": 4,
+      "cells": [
+        {
+          "cp": "󰄩",
+          "bold": true,
+          "mark": null
+        },
+        {
+          "cp": "󰁲",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄪",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄭",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄫",
+          "bold": false,
+          "mark": "green"
+        },
+        null,
+        {
+          "cp": "󰄰",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄯",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄬",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰄮",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁳",
+          "bold": false,
+          "mark": null
+        },
+        {
+          "cp": "󰁴",
+          "bold": false,
+          "mark": null
+        },
+        null,
+        null,
+        {
+          "cp": "󰄱",
+          "bold": false,
+          "mark": "green"
+        },
+        {
+          "cp": "󰁵",
+          "bold": false,
+          "mark": "green"
+        }
+      ]
+    }
+  }
+}

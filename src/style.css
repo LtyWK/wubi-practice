@@ -9,6 +9,14 @@
   font-display: swap;
 }
 
+/* 98 王码字根字形字体：覆盖补充私有区 B（SPUA-B），与 86 字体按 unicode-range 自动区分 */
+@font-face {
+  font-family: 'WubiRoots98';
+  src: url('./assets/fonts/wubi98-roots.otf') format('opentype');
+  unicode-range: U+F0000-F0170;
+  font-display: swap;
+}
+
 :root {
   --color-bg: #f5f6f8;
   --color-surface: #ffffff;
@@ -30,6 +38,13 @@
   --area-3: #cdb8a0;
   --area-4: #c3a8bd;
   --area-5: #b1b0c9;
+  /* 字根标记色（红/绿，仅作标记，具体色值随主题） */
+  --root-mark-red: #c0392b;
+  --root-mark-red-bg: #fdf1f0;
+  --root-mark-red-border: #e6c3bf;
+  --root-mark-green: #1a7f4b;
+  --root-mark-green-bg: #eff8f2;
+  --root-mark-green-border: #bcdcc8;
   --flash-ok: #b7dcc4;
   --flash-bad: #e8bcbc;
   --flash-timeout: #ecd9a6;
@@ -97,6 +112,12 @@ html[data-theme='dark'] {
   --area-3: #6e5f4c;
   --area-4: #6b5563;
   --area-5: #555a75;
+  --root-mark-red: #e08a8a;
+  --root-mark-red-bg: #34262a;
+  --root-mark-red-border: #5a3a3a;
+  --root-mark-green: #8fc7a6;
+  --root-mark-green-bg: #1f2c25;
+  --root-mark-green-border: #3f6b52;
   --flash-ok: #3f6b52;
   --flash-bad: #6b4141;
   --flash-timeout: #6b5a33;

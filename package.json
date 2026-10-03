@@ -16,8 +16,8 @@
     "test": "vitest run",
     "test:levels": "vitest run src/testing/levels.smoke.test.ts",
     "test:watch": "vitest",
-    "data:build": "tsx scripts/build-chars.ts",
-    "data:verify": "tsx scripts/verify-data.ts && tsx scripts/verify-articles.ts",
+    "data:build": "tsx scripts/build-chars.ts wubi86 && tsx scripts/build-zigen.ts wubi86 && tsx scripts/build-chars.ts wubi98 && tsx scripts/build-zigen.ts wubi98",
+    "data:verify": "tsx scripts/verify-data.ts wubi86 && tsx scripts/verify-data.ts wubi98 && tsx scripts/verify-articles.ts",
     "format": "prettier --write ."
   },
   "dependencies": {
