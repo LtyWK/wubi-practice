@@ -2,9 +2,14 @@
 import { computed, ref } from 'vue'
 import { useSave } from '@/composables/useSave'
 import { useLevels } from '@/composables/useLevels'
+import { useUiSettings } from '@/composables/useUiSettings'
 
 const { save, exportSave, importSave, resetAll } = useSave()
 const { unlockAll } = useLevels()
+const { scheme } = useUiSettings()
+
+/** 当前方案名称（存档按方案独立保存） */
+const schemeLabel = computed(() => (scheme.value === 'wubi98' ? '98 王码' : '86 版'))
 
 const message = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -25,7 +30,7 @@ function doExport(): void {
     d.getDate(),
   ).padStart(2, '0')}`
   a.href = url
-  a.download = `wubi-save-${stamp}.json`
+  a.download = `wubi-save-${scheme.value.slice(-2)}-${stamp}.json`
   a.click()
   URL.revokeObjectURL(url)
   message.value = '已导出存档文件'
@@ -70,6 +75,7 @@ function doReset(): void {
 
     <section class="card">
       <h2 class="card__title">当前存档</h2>
+      <p class="card__desc">输入方案：{{ schemeLabel }}（进度、错题与统计按方案独立保存）</p>
       <ul class="summary">
         <li>已通关卡：{{ summary.passed }}</li>
         <li>已解锁阶段：{{ summary.stages }}</li>

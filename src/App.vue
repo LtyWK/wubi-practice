@@ -1,12 +1,38 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+import { flushSave } from '@/composables/useSave'
+import { useUiSettings } from '@/composables/useUiSettings'
+import type { WubiScheme } from '@/types'
+
+const { scheme, setScheme } = useUiSettings()
+
+/** 切换输入方案：先落盘当前方案进度，再写偏好并刷新页面 */
+function onSchemeChange(e: Event): void {
+  const value = (e.target as HTMLSelectElement).value as WubiScheme
+  if (value === scheme.value) return
+  flushSave()
+  setScheme(value)
+  window.location.reload()
+}
 </script>
 
 <template>
   <div class="app">
     <header class="app-header">
       <div class="app-header__inner">
-        <RouterLink to="/" class="app-title">五笔学习</RouterLink>
+        <div class="app-header__left">
+          <RouterLink to="/" class="app-title">五笔学习</RouterLink>
+          <select
+            class="scheme-select"
+            :value="scheme"
+            title="切换输入方案（切换后刷新页面）"
+            aria-label="输入方案"
+            @change="onSchemeChange"
+          >
+            <option value="wubi86">86 版</option>
+            <option value="wubi98">98 王码</option>
+          </select>
+        </div>
         <nav class="app-nav">
           <RouterLink to="/">关卡地图</RouterLink>
           <RouterLink to="/free">自由模式</RouterLink>
@@ -56,13 +82,33 @@ import { RouterLink, RouterView } from 'vue-router'
   justify-content: center;
 }
 
-.app-title {
+.app-header__left {
   position: absolute;
   left: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-title {
   font-size: var(--font-lg);
   font-weight: 600;
   color: var(--color-text);
   text-decoration: none;
+}
+
+/* 方案切换下拉 */
+.scheme-select {
+  padding: 3px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.scheme-select:hover {
+  border-color: var(--color-primary);
 }
 
 .app-nav {
@@ -125,7 +171,7 @@ import { RouterLink, RouterView } from 'vue-router'
     gap: var(--space-2);
   }
 
-  .app-title {
+  .app-header__left {
     position: static;
   }
 
