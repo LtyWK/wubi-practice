@@ -91,10 +91,11 @@ describe('PlayView 字根模式', () => {
     await practice!.trigger('click')
     await nextTick()
 
-    // 完成加练（10 题，全为 z），即便成绩达标也不应解锁
+    // 完成加练（10 题，均为实际打错的字根），即便成绩达标也不应解锁
     await waitUntil(() => wrapper.findAll('.tp-char').length > 0)
     for (let i = 0; i < 10; i += 1) {
-      pressKey('z')
+      const key = wrapper.find('.vk__key--hint .vk__letter').text().toLowerCase()
+      pressKey(key)
       await nextTick()
     }
 

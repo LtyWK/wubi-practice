@@ -98,7 +98,8 @@ const zigenIndex = ref(0)
 const zigenWrong = ref<boolean[]>([])
 const zigenCorrectKeys = ref(0)
 const zigenTotalKeys = ref(0)
-const zigenErrors = ref<Record<string, number>>({})
+/** 字根级错误次数（PUA 字根 → 次数），用于加练加权出题 */
+const zigenRootErrors = ref<Record<string, number>>({})
 
 // ---------- 文本模式 ----------
 const session = ref<PracticeSession | null>(null)
@@ -141,6 +142,47 @@ function makeZigenTasks(pool: string[], count: number): ZigenTask[] {
       roots.length > 0 ? roots[Math.floor(Math.random() * roots.length)] : key.toUpperCase()
     return { key, root }
   })
+}
+
+/** 字根 → 键位反查表（加练出题用） */
+function rootKeyMap(): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const [key, item] of Object.entries(zigenMap.value)) {
+    for (const root of item.roots) map.set(root, key)
+  }
+  return map
+}
+
+/**
+ * 字根加练：按错误次数线性加权随机出题，打错越多的字根出现频率越高。
+ * 纯加权随机（不做键位均衡 / 连续去重，否则会抹平加权效果）。
+ */
+function makeDrillZigenTasks(roots: string[]): ZigenTask[] {
+  const keyOf = rootKeyMap()
+  const items = roots
+    .map((root) => ({
+      root,
+      key: keyOf.get(root) ?? '',
+      count: Math.max(1, zigenRootErrors.value[root] ?? 1),
+    }))
+    .filter((w) => w.key)
+  if (items.length === 0) return []
+  const total = items.length * DRILL_REPEAT
+  const sum = items.reduce((a, b) => a + b.count, 0)
+  const out: ZigenTask[] = []
+  for (let n = 0; n < total; n += 1) {
+    let r = Math.random() * sum
+    let pick = items[items.length - 1]
+    for (const it of items) {
+      r -= it.count
+      if (r <= 0) {
+        pick = it
+        break
+      }
+    }
+    out.push({ key: pick.key, root: pick.root })
+  }
+  return out
 }
 
 /** 常用字根强化：按常用字根权重加权出题，避免与上一题键位重复 */
@@ -248,15 +290,16 @@ const passed = computed(() => {
 
 const options = computed<MistakeOption[]>(() => {
   if (mode.value === 'zigen') {
-    const list: MistakeOption[] = Object.entries(zigenErrors.value).map(([key, count]) => ({
-      id: key,
-      main: key.toUpperCase(),
+    // 字根模式：按「实际打错的字根」列出，加练据此加权出题
+    const list: MistakeOption[] = Object.entries(zigenRootErrors.value).map(([root, count]) => ({
+      id: root,
+      main: root,
       detail: `错误 ${count} 次`,
     }))
     const seen = new Set(list.map((o) => o.id))
-    for (const [key, count] of Object.entries(timeoutCounts.value)) {
-      if (seen.has(key)) continue
-      list.push({ id: key, main: key.toUpperCase(), detail: `超时 ${count} 次` })
+    for (const [root, count] of Object.entries(timeoutCounts.value)) {
+      if (seen.has(root)) continue
+      list.push({ id: root, main: root, detail: `超时 ${count} 次` })
     }
     return list
   }
@@ -314,7 +357,7 @@ function initZigen(queue: ZigenTask[], isDrill = false): void {
   zigenWrong.value = new Array(queue.length).fill(false)
   zigenCorrectKeys.value = 0
   zigenTotalKeys.value = 0
-  zigenErrors.value = {}
+  zigenRootErrors.value = {}
 }
 
 function initText(chars: string[], isDrill = false): void {
@@ -385,7 +428,11 @@ function handleZigenKey(key: string): void {
     charTimer.value = startChar(Date.now())
     if (zigenIndex.value >= zigenQueue.value.length) finish()
   } else {
-    zigenErrors.value[key] = (zigenErrors.value[key] ?? 0) + 1
+    const task = zigenQueue.value[zigenIndex.value]
+    if (task) {
+      // 记录实际打错的字根（按字根聚合，供加练加权）
+      zigenRootErrors.value[task.root] = (zigenRootErrors.value[task.root] ?? 0) + 1
+    }
     zigenWrong.value[zigenIndex.value] = true
     setFeedback(key, 'bad')
     charTimer.value = startChar(Date.now())
@@ -435,7 +482,7 @@ function onKeydown(e: KeyboardEvent): void {
 
 /** 当前待练项标识：文本为汉字，字根为键位；已完成时返回空串 */
 function currentItemId(): string {
-  if (mode.value === 'zigen') return zigenQueue.value[zigenIndex.value]?.key ?? ''
+  if (mode.value === 'zigen') return zigenQueue.value[zigenIndex.value]?.root ?? ''
   const s = session.value
   if (!s || s.finished) return ''
   return s.items[s.cursor]?.char ?? ''
@@ -469,13 +516,14 @@ function finish(): void {
 
 function onPractice(ids: string[]): void {
   if (ids.length === 0) return
-  // 每项重复 DRILL_REPEAT 次，整体均匀随机且不连续重复
-  const total = ids.length * DRILL_REPEAT
   if (mode.value === 'zigen') {
-    initZigen(makeZigenTasks(ids, total), true)
+    // 字根加练：按错误次数加权，打错的字根出现频率更高
+    const tasks = makeDrillZigenTasks(ids)
+    initZigen(tasks.length > 0 ? tasks : makeZigenTasks(ids, ids.length * DRILL_REPEAT), true)
     return
   }
-  initText(randomSequence(ids, total), true)
+  // 单字加练：每项重复 DRILL_REPEAT 次，整体均匀随机且不连续重复
+  initText(randomSequence(ids, ids.length * DRILL_REPEAT), true)
 }
 
 function closeResult(): void {

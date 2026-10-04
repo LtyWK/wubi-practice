@@ -56,15 +56,20 @@ export function sample(pool: string[], count: number): string[] {
 }
 
 /**
- * 按常用字根权重生成字根序列（常用字根强化训练用）。
- * - 权重取 sqrt(count) 压缩：常用字根明显更常出现，同时保留低频字根的机会；
+ * 按权重生成字根序列。
+ * - `exponent` 控制权重压缩：默认 0.5（sqrt，常用字根强化用，保留低频机会）；
+ *   传 1 为线性（字根加练用，打错越多的字根出现频率越高）；
  * - 尽量让相邻题目的键位不同，使键位分布更均衡。
  */
-export function weightedSequence(items: RadicalWeight[], count: number): RadicalWeight[] {
+export function weightedSequence(
+  items: RadicalWeight[],
+  count: number,
+  exponent = 0.5,
+): RadicalWeight[] {
   if (items.length === 0 || count <= 0) return []
   if (items.length === 1) return new Array<RadicalWeight>(count).fill(items[0])
 
-  const weights = items.map((it) => Math.sqrt(Math.max(1, it.count)))
+  const weights = items.map((it) => Math.pow(Math.max(1, it.count), exponent))
   const total = weights.reduce((a, b) => a + b, 0)
 
   function pick(): RadicalWeight {
