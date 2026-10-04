@@ -67,6 +67,9 @@ const started = ref(false)
 const finished = ref(false)
 const showResult = ref(false)
 const drill = ref(false)
+/** 暂停状态（暂停期间冻结计时与输入） */
+const paused = ref(false)
+let pausedAt = 0
 const feedback = ref<KeyFeedback | null>(null)
 const sticky = ref<KeyFeedback | null>(null)
 const charTimer = ref<CharTimer>(startChar(0))
@@ -292,6 +295,7 @@ const options = computed<MistakeOption[]>(() => {
 function resetCommon(): void {
   finished.value = false
   started.value = false
+  paused.value = false
   showResult.value = false
   feedback.value = null
   sticky.value = null
@@ -416,7 +420,7 @@ function handleTextKey(key: string): void {
 
 /** 统一输入入口：物理键盘与虚拟键盘点按共用 */
 function handleInput(key: string): void {
-  if (finished.value) return
+  if (finished.value || paused.value) return
   if (!/^[a-z ]$/.test(key)) return
   startIfNeeded()
   if (mode.value === 'zigen') handleZigenKey(key)
@@ -438,7 +442,7 @@ function currentItemId(): string {
 }
 
 function onTimeoutTick(): void {
-  if (!started.value || finished.value) return
+  if (!started.value || finished.value || paused.value) return
   const timeoutMs = level.value?.timeoutMs ?? 4000
   const r = checkTimeout(charTimer.value, timeoutMs, Date.now())
   if (r.timedOut) {
@@ -511,6 +515,22 @@ function restart(): void {
   void startRound()
 }
 
+/** 暂停 / 继续：恢复时扣除暂停时长，避免影响速度与超时判定 */
+function togglePause(): void {
+  if (finished.value) return
+  if (paused.value) {
+    const duration = Date.now() - pausedAt
+    if (sessionStartAt.value > 0) sessionStartAt.value += duration
+    if (charTimer.value.charStartAt > 0) {
+      charTimer.value = { ...charTimer.value, charStartAt: charTimer.value.charStartAt + duration }
+    }
+    paused.value = false
+  } else {
+    pausedAt = Date.now()
+    paused.value = true
+  }
+}
+
 onMounted(async () => {
   await ensureScheme(uiScheme.value)
   const [zigenData, weights] = await Promise.all([
@@ -532,7 +552,7 @@ onMounted(async () => {
 
   window.addEventListener('keydown', onKeydown)
   tickTimer = window.setInterval(() => {
-    if (started.value && !finished.value) now.value = Date.now()
+    if (started.value && !finished.value && !paused.value) now.value = Date.now()
   }, 1000)
   timeoutTimer = window.setInterval(onTimeoutTick, 200)
 })
@@ -569,6 +589,9 @@ onUnmounted(() => {
 
     <div class="keyboard-wrap">
       <div class="controls">
+        <button class="ctrl-btn" :class="{ 'ctrl-btn--on': paused }" @click="togglePause">
+          {{ paused ? '继续' : '暂停' }}
+        </button>
         <button class="ctrl-btn" @click="restart">重新开始</button>
         <button
           class="ctrl-btn"
@@ -606,6 +629,11 @@ onUnmounted(() => {
       />
     </div>
 
+    <div v-if="paused" class="pause-overlay" @click="togglePause">
+      <span class="pause-overlay__title">已暂停</span>
+      <span class="pause-overlay__hint">点击任意处继续</span>
+    </div>
+
     <ResultModal
       :visible="showResult"
       :title="panelTitle || level?.title || '练习结算'"
@@ -622,6 +650,7 @@ onUnmounted(() => {
 
 <style scoped>
 .play {
+  position: relative;
   max-width: 1000px;
   margin: 0 auto;
   display: flex;
@@ -661,6 +690,45 @@ onUnmounted(() => {
 .ctrl-btn--off {
   color: var(--color-text-muted);
   opacity: 0.65;
+}
+
+.ctrl-btn--on {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* 暂停遮罩：覆盖练习区，点击任意处继续 */
+.pause-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  background: rgba(15, 23, 42, 0.62);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  user-select: none;
+  backdrop-filter: blur(1px);
+}
+
+.pause-overlay__title {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  line-height: 1.3;
+  color: #fff;
+  letter-spacing: 0.15em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.pause-overlay__hint {
+  font-size: var(--font-sm);
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 }
 
 .volume__panel {
