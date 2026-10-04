@@ -4,7 +4,7 @@
  */
 @font-face {
   font-family: 'WubiRoots';
-  src: url('./assets/fonts/wubi-roots.ttf') format('truetype');
+  src: url('./assets/fonts/wubi-roots-fix.woff2') format('woff2');
   unicode-range: U+E000-F8FF;
   font-display: swap;
 }
@@ -12,7 +12,7 @@
 /* 98 王码字根字形字体：覆盖补充私有区 B（SPUA-B），与 86 字体按 unicode-range 自动区分 */
 @font-face {
   font-family: 'WubiRoots98';
-  src: url('./assets/fonts/wubi98-roots.otf') format('opentype');
+  src: url('./assets/fonts/wubi98-roots-fix.woff2') format('woff2');
   unicode-range: U+F0000-F0170;
   font-display: swap;
 }
