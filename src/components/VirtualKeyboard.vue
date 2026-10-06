@@ -82,7 +82,12 @@ function sizeOf(key: string): number {
 
 <template>
   <div class="vk" :class="{ 'vk--disabled': props.disabled }">
-    <div v-for="(row, ri) in ROWS" :key="ri" class="vk__row">
+    <div
+      v-for="(row, ri) in ROWS"
+      :key="ri"
+      class="vk__row"
+      :class="{ 'vk__row--offset': ri === 2 }"
+    >
       <span
         v-for="key in row"
         :key="key"
@@ -155,6 +160,11 @@ function sizeOf(key: string): number {
   gap: var(--vk-gap);
   justify-content: center;
   width: 100%;
+}
+
+/* z–m 行左偏半个键宽，贴合真实键盘的错位排布（transform 不影响布局宽度） */
+.vk__row--offset {
+  transform: translateX(calc(-0.5 * (100% - 9 * var(--vk-gap)) / 10));
 }
 
 /* 键帽：加高，上方字根矩阵 + 下方信息条 */
