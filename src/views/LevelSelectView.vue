@@ -23,6 +23,22 @@ function unitOf(level: LevelConfig): string {
   return level.type === 'zigen' ? '键/分' : '字/分'
 }
 
+function isIntro(level: LevelConfig): boolean {
+  return level.type === 'intro'
+}
+
+function reqText(level: LevelConfig): string {
+  if (isIntro(level)) return '阅读完毕'
+  return `≥ ${level.require.speed} ${unitOf(level)} · ${pct(level.require.accuracy)}`
+}
+
+function bestText(level: LevelConfig): string {
+  const best = levelResult(level.id)
+  if (!best) return '尚无成绩'
+  if (isIntro(level)) return '已阅读'
+  return `最佳 ${best.bestSpeed.toFixed(0)} ${unitOf(level)}`
+}
+
 function go(level: LevelConfig): void {
   router.push(`/play/${level.id}`)
 }
@@ -48,10 +64,12 @@ function badge(stage: StageConfig, level: LevelConfig): string {
 
 function tip(level: LevelConfig): string {
   const best = levelResult(level.id)
-  const req = `达标：≥ ${level.require.speed} ${unitOf(level)} · ${pct(level.require.accuracy)}`
-  return best
-    ? `${level.title}\n${req}\n最佳：${best.bestSpeed.toFixed(0)} · ${pct(best.bestAccuracy)}`
-    : `${level.title}\n${req}\n未通关`
+  const req = isIntro(level)
+    ? '阅读完毕'
+    : `达标：≥ ${level.require.speed} ${unitOf(level)} · ${pct(level.require.accuracy)}`
+  if (!best) return `${level.title}\n${req}\n未通关`
+  if (isIntro(level)) return `${level.title}\n${req}\n已阅读`
+  return `${level.title}\n${req}\n最佳：${best.bestSpeed.toFixed(0)} · ${pct(best.bestAccuracy)}`
 }
 </script>
 
@@ -96,15 +114,8 @@ function tip(level: LevelConfig): string {
                 <span class="card__no">{{ li + 1 }}</span>
                 <span class="card__body">
                   <span class="card__title">{{ level.title }}</span>
-                  <span class="card__req">
-                    ≥ {{ level.require.speed }} {{ unitOf(level) }} · {{ pct(level.require.accuracy) }}
-                  </span>
-                  <span class="card__best">
-                    <template v-if="levelResult(level.id)">
-                      最佳 {{ levelResult(level.id)?.bestSpeed.toFixed(0) }} {{ unitOf(level) }}
-                    </template>
-                    <template v-else>尚无成绩</template>
-                  </span>
+                  <span class="card__req">{{ reqText(level) }}</span>
+                  <span class="card__best">{{ bestText(level) }}</span>
                 </span>
                 <span class="card__badge">{{ badge(stage, level) }}</span>
               </button>

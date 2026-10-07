@@ -2,12 +2,13 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CodeHint from '@/components/CodeHint.vue'
+import IntroPanel from '@/components/IntroPanel.vue'
 import ResultModal from '@/components/ResultModal.vue'
 import StatsBar from '@/components/StatsBar.vue'
 import TextPanel from '@/components/TextPanel.vue'
 import VirtualKeyboard from '@/components/VirtualKeyboard.vue'
 import { loadArticles, loadRadicalWeights, loadZigen } from '@/data/loader'
-import { buildPool, isHan, randomSequence, sample, weightedSequence } from '@/data/pool'
+import { buildLevelChars, isHan, randomSequence, weightedSequence } from '@/data/pool'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
@@ -58,6 +59,7 @@ const level = computed<LevelConfig | undefined>(() =>
   isFree.value ? undefined : findLevel(levelId.value),
 )
 const isZigen = computed(() => level.value?.type === 'zigen')
+const isIntro = computed(() => level.value?.type === 'intro')
 const mode = computed<'zigen' | 'text'>(() => (isZigen.value ? 'zigen' : 'text'))
 const articleMode = computed(() => level.value?.type === 'article' || isFree.value)
 
@@ -259,7 +261,7 @@ const highlight = computed(() => {
   if (!s || s.finished) return ''
   const item = s.items[s.cursor]
   if (!item) return ''
-  if (s.input.length > 0 && item.shorts.includes(s.input)) return ' '
+  if (!s.requireFull && s.input.length > 0 && item.shorts.includes(s.input)) return ' '
   return item.code[s.input.length] ?? ''
 })
 
@@ -364,7 +366,7 @@ function initText(chars: string[], isDrill = false): void {
   resetCommon()
   drill.value = isDrill
   streak.value = {}
-  session.value = createSession(chars, scheme.value, 0)
+  session.value = createSession(chars, scheme.value, 0, { requireFull: level.value?.requireFull })
   displayMap.value = chars.map((c, i) => ({ char: c, input: i }))
 }
 
@@ -546,6 +548,7 @@ async function startRound(): Promise<void> {
   }
   const lv = level.value
   if (!lv) return
+  if (lv.type === 'intro') return
   if (lv.type === 'zigen') {
     initZigen(
       lv.source === 'radicals' ? makeRadicalTasks(lv.length) : makeZigenTasks(lv.pool, lv.length),
@@ -553,9 +556,15 @@ async function startRound(): Promise<void> {
   } else if (lv.type === 'article') {
     await initArticle(lv)
   } else {
-    const pool = await buildPool(lv, uiScheme.value)
-    initText(sample(pool, lv.length))
+    initText(await buildLevelChars(lv, uiScheme.value))
   }
+}
+
+/** 教学关：阅读完毕即达标，返回地图 */
+function completeIntro(): void {
+  const lv = level.value
+  if (lv) recordResult(lv.id, 0, 1, true, 0)
+  router.push('/')
 }
 
 /** 重新开始本关（重新抽题，开新一轮） */
@@ -596,6 +605,8 @@ onMounted(async () => {
       return
     }
   }
+  // 教学关仅阅读，不进入打字流程
+  if (isIntro.value) return
   await startRound()
 
   window.addEventListener('keydown', onKeydown)
@@ -615,7 +626,15 @@ onUnmounted(() => {
 
 <template>
   <section class="play">
-    <StatsBar
+    <IntroPanel
+      v-if="isIntro"
+      :title="level?.title ?? '教学关'"
+      :paragraphs="level?.intro ?? []"
+      @done="completeIntro"
+    />
+
+    <template v-else>
+      <StatsBar
       :speed="stats.speed"
       :accuracy="stats.accuracy"
       :done="doneCount"
@@ -693,6 +712,7 @@ onUnmounted(() => {
       @practice="onPractice"
       @close="closeResult"
     />
+    </template>
   </section>
 </template>
 
