@@ -120,3 +120,21 @@ describe('PlayView 单字模式', () => {
     expect(wrapper.find('.tp-char--done-clean').exists()).toBe(true)
   })
 })
+
+describe('PlayView 教学关', () => {
+  it('阅读完毕后标记通关', async () => {
+    routeRef.params.id = 's2-intro'
+    unlockStage('s2')
+
+    const wrapper = mount(PlayView)
+    await waitUntil(() => wrapper.find('.intro').exists())
+    expect(wrapper.find('.intro__title').text()).toContain('简码概念')
+    expect(wrapper.findAll('.intro__p').length).toBeGreaterThan(0)
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('已阅读'))
+    expect(btn).toBeTruthy()
+    await btn!.trigger('click')
+
+    expect(isLevelPassed('s2-intro')).toBe(true)
+  })
+})

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadArticles, loadRadicalWeights, loadZigen } from '@/data/loader'
-import { buildPool, isHan, sample } from '@/data/pool'
+import { buildLevelChars, isHan } from '@/data/pool'
 import { STAGES } from '@/data/stages'
 import { createSession, feedKey } from '@/engine/judge'
 import { ensureScheme, getScheme } from '@/schemes/registry'
@@ -19,13 +19,14 @@ async function levelChars(lv: LevelConfig, scheme: WubiScheme): Promise<string[]
     const text = chosen.map((a) => a.paragraphs.join('\n')).join('\n')
     return [...text].filter(isHan)
   }
-  return sample(await buildPool(lv, scheme), lv.length)
+  return buildLevelChars(lv, scheme)
 }
 
 for (const scheme of SCHEMES) {
   describe(`关卡冒烟[${scheme}]：按正确编码可自动通关`, () => {
     for (const stage of STAGES) {
       for (const level of stage.levels) {
+        if (level.type === 'intro') continue
         it(`${level.id} · ${level.title}`, async () => {
           await ensureScheme(scheme)
           if (level.type === 'zigen') {

@@ -42,6 +42,7 @@ function danzi(
   timeoutMs: number,
   speed: number,
   accuracy = 0.85,
+  opt: Partial<LevelConfig> = {},
 ): LevelConfig {
   return {
     id,
@@ -53,6 +54,21 @@ function danzi(
     length,
     timeoutMs,
     require: { speed, accuracy },
+    ...opt,
+  }
+}
+
+/** 教学关：纯阅读，阅读完毕即视为达标 */
+function intro(id: string, title: string, paragraphs: string[]): LevelConfig {
+  return {
+    id,
+    type: 'intro',
+    title,
+    pool: [],
+    intro: paragraphs,
+    length: 0,
+    timeoutMs: 0,
+    require: { speed: 0, accuracy: 0 },
   }
 }
 
@@ -85,13 +101,16 @@ const ZHE = ['n', 'b', 'v', 'c', 'x']
 const ALL_KEYS = [...HENG, ...SHU, ...PIE, ...NA, ...ZHE]
 
 /**
- * V2 关卡体系：6 阶段 / 29 小关。
+ * V2 关卡体系：6 阶段 / 37 小关。
  *
- * 训练量设计依据（单次练习 3–6 分钟，达到有效肌肉记忆时长）：
+ * 训练量设计依据（单次练习约 3–6 分钟，达到有效肌肉记忆时长）：
  * - 字根关：单区 200 题（每键约 40 次）；全键位综合 300 题（每键约 12 次）
  * - 常用字根强化：300 题，按一级常用字中字根的使用频率加权，高频字根更多出现
- * - 简码 / 常用字关：200 题
+ * - 简码关：100 题；口诀关每字连打 5 遍（drill）后再乱序巩固
+ * - 全码训练（s2-short1-full）：250 题（25 字 × 10 遍），每局随机字序，强制全码
+ * - 常用字/识别码关：100–150 题
  * - 文章关：整篇连续输入（length 为字数参考，实际按篇目字数）
+ * - 教学关（intro）：纯阅读，阅读完毕即达标
  *
  * 阶段内小关顺序自由；阶段内全部达标后解锁下一阶段。
  */
@@ -113,24 +132,78 @@ export const STAGES: StageConfig[] = [
   {
     id: 's2',
     title: '简码入门',
-    description: '一级简码与二级简码上屏',
+    description: '认识简码与口诀，练熟一级简码全码与二级简码上屏',
     levels: [
-      danzi('s2-short1-a', '一级简码 G–M', 'short1', HENG.concat(SHU), 200, 5000, 40),
-      danzi('s2-short1-b', '一级简码 T–X', 'short1', [...PIE, ...NA, ...ZHE], 200, 5000, 40),
-      danzi('s2-short1-all', '一级简码混合', 'short1', undefined, 200, 5000, 50),
-      danzi('s2-short2-mix', '二级简码入门', 'short2', undefined, 200, 5000, 50),
+      intro('s2-intro', '简码概念与口诀', [
+        '五笔输入法中，为减少击键，给最常用的字规定了简码：',
+        '一级简码——按 1 个键 + 空格即可上屏，共 25 个字，分别对应 25 个字母键。',
+        '二级简码——按 2 个键 + 空格上屏，覆盖 600 多个常用字。',
+        '一级简码口诀（按键盘五区排列，左为字、右为对应键位）：',
+        '一 地 在 要 工　｜　G F D S A',
+        '上 是 中 国 同　｜　H J K L M',
+        '和 的 有 人 我　｜　T R E W Q',
+        '主 产 不 为 这　｜　Y U I O P',
+        '民 了 发 以 经　｜　N B V C X',
+        '提示：词组输入时，每个字只取前 2 码。所以即便会用简码上屏，也要记住这些字的前 2 码——后面「一级简码·全码训练」会反复练习完整编码，为词组输入打好基础。',
+      ]),
+      danzi('s2-short1-a', '一级简码·口诀上半段', 'short1', HENG.concat(SHU), 100, 5000, 35, 0.85, {
+        pattern: 'drill',
+        drillRepeat: 5,
+      }),
+      danzi('s2-short1-b', '一级简码·口诀下半段', 'short1', [...PIE, ...NA, ...ZHE], 100, 5000, 35, 0.85, {
+        pattern: 'drill',
+        drillRepeat: 5,
+      }),
+      danzi('s2-short1-full', '一级简码·全码训练', 'short1', undefined, 250, 5000, 30, 0.9, {
+        pattern: 'drill',
+        drillRepeat: 10,
+        drillShuffle: true,
+        requireFull: true,
+      }),
+      danzi('s2-short1-mix', '一级简码混合', 'short1', undefined, 100, 5000, 40),
+      danzi('s2-short2-a', '二级简码·首码横竖区', 'short2', HENG.concat(SHU), 100, 6000, 40),
+      danzi('s2-short2-b', '二级简码·首码撇捺折区', 'short2', [...PIE, ...NA, ...ZHE], 100, 6000, 40),
+      danzi('s2-short2-mix', '二级简码·全键位混合', 'short2', undefined, 100, 5000, 45),
+      danzi('s2-short-all', '一二级简码综合', undefined, undefined, 150, 5000, 50, 0.85, {
+        mix: [
+          { source: 'short1', weight: 1 },
+          { source: 'short2', weight: 3 },
+        ],
+      }),
     ],
   },
   {
     id: 's3',
     title: '常用字攻坚',
-    description: '二级简码分区精练与识别码专题',
+    description: '拆字与识别码专项，攻克全码输入',
     levels: [
-      danzi('s3-short2-heng-shu', '二级简码·横竖区', 'short2', HENG.concat(SHU), 200, 6000, 50),
-      danzi('s3-short2-pie-na-zhe', '二级简码·撇捺折区', 'short2', [...PIE, ...NA, ...ZHE], 200, 6000, 50),
-      danzi('s3-freq1-a', '常用字·横竖区', 'freq1', HENG.concat(SHU), 200, 6000, 50),
-      danzi('s3-freq1-b', '常用字·撇捺折区', 'freq1', [...PIE, ...NA, ...ZHE], 200, 6000, 50),
-      danzi('s3-freq1-idcode', '识别码专题', 'idcode', undefined, 200, 6000, 50, 0.8),
+      intro('s3-intro', '识别码原理', [
+        '当一个字拆出的字根不足 4 个时，五笔需要补一个「末笔字型交叉识别码」，使编码唯一。',
+        '识别码由字的「末笔画」与「字型」共同决定：',
+        '字型：左右型（1）、上下型（2）、杂合型（3）。',
+        '末笔：横（1）、竖（2）、撇（3）、捺（4）、折（5）。',
+        '键位规律——末笔决定区，字型决定区内位置：',
+        '横区 G F D ｜ 竖区 H J K ｜ 撇区 T R E ｜ 捺区 Y U I ｜ 折区 N B V（依次为左右、上下、杂合）',
+        '例：「沐」= 氵 + 木（2 个字根）+ 末笔捺(4) + 左右型(1) → 识别码 Y → 全码 ISY。',
+        '本阶段先练三字根全码字，再专攻双字根字的识别码，最后综合常用字。',
+      ]),
+      danzi('s3-full-3roots', '全码基础·三字根', 'freq1', undefined, 100, 6000, 40, 0.85, {
+        rootCount: 3,
+      }),
+      danzi('s3-idcode-left-up', '识别码·左右/上下型', 'idcode', undefined, 150, 6000, 30, 0.85, {
+        rootCount: 2,
+        shape: [1, 2],
+      }),
+      danzi('s3-idcode-mix', '识别码·杂合型', 'idcode', undefined, 100, 6000, 30, 0.85, {
+        rootCount: 2,
+        shape: [3],
+      }),
+      danzi('s3-full-4roots', '全码基础·四字根', 'freq1', undefined, 100, 6000, 40, 0.85, {
+        rootCount: 4,
+      }),
+      danzi('s3-freq1-a', '常用字·横竖区', 'freq1', HENG.concat(SHU), 100, 6000, 50),
+      danzi('s3-freq1-b', '常用字·撇捺折区', 'freq1', [...PIE, ...NA, ...ZHE], 100, 6000, 50),
+      danzi('s3-freq1-mix', '常用字·全码综合', 'freq1', undefined, 150, 5000, 50),
     ],
   },
   {
