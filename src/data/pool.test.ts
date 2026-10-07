@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { RadicalWeight } from '@/types'
-import { randomSequence, sample, shuffle, weightedSequence } from './pool'
+import type { LevelConfig, RadicalWeight } from '@/types'
+import { ensureScheme } from '@/schemes/registry'
+import { buildLevelChars, buildPool, drillSequence, randomSequence, sample, shapeOfIdcode, shuffle, weightedSequence } from './pool'
 
 function rw(key: string, count: number): RadicalWeight {
   return { root: `pua-${key}`, key, count }
@@ -90,5 +91,109 @@ describe('shuffle', () => {
     const out = shuffle(src)
     expect([...out].sort()).toEqual([...src].sort())
     expect(src).toEqual(['a', 'b', 'c', 'd'])
+  })
+})
+
+describe('shapeOfIdcode', () => {
+  it('由识别码末位推导字型（横GFD/竖HJK/撇TRE/捺YUI/折NBV）', () => {
+    expect(shapeOfIdcode('fbn')).toBe(1) // 地：末 N = 左右
+    expect(shapeOfIdcode('def')).toBe(2) // 有：末 F = 上下
+    expect(shapeOfIdcode('khk')).toBe(3) // 中：末 K = 杂合
+    expect(shapeOfIdcode('vbg')).toBe(1) // 好：末 G = 左右
+    expect(shapeOfIdcode('lgyi')).toBe(3) // 国：末 I = 杂合
+  })
+
+  it('末位未落在识别码键位集合时返回 null', () => {
+    // 识别码仅用 15 键：横 GFD / 竖 HJK / 撇 TRE / 捺 YUI / 折 NBV
+    expect(shapeOfIdcode('abc')).toBeNull()
+    expect(shapeOfIdcode('vw')).toBeNull()
+    expect(shapeOfIdcode('qpm')).toBeNull()
+  })
+})
+
+describe('drillSequence', () => {
+  it('按池顺序每字连打 repeat 遍', () => {
+    expect(drillSequence(['a', 'b', 'c'], 2, 6)).toEqual(['a', 'a', 'b', 'b', 'c', 'c'])
+  })
+
+  it('不足 total 时以乱序补足且不出现相邻重复', () => {
+    const seq = drillSequence(['a', 'b', 'c', 'd'], 1, 10)
+    expect(seq).toHaveLength(10)
+    expect(seq.slice(0, 4)).toEqual(['a', 'b', 'c', 'd'])
+    expect(hasAdjacentDuplicate(seq)).toBe(false)
+  })
+
+  it('超出 total 时截断', () => {
+    expect(drillSequence(['a', 'b', 'c'], 3, 4)).toEqual(['a', 'a', 'a', 'b'])
+  })
+
+  it('空池或非正数量返回空数组', () => {
+    expect(drillSequence([], 3, 9)).toEqual([])
+    expect(drillSequence(['a'], 2, 0)).toEqual([])
+  })
+})
+
+function level(extra: Partial<LevelConfig>): LevelConfig {
+  return {
+    id: 'test',
+    type: 'danzi',
+    title: 'test',
+    pool: [],
+    length: 100,
+    timeoutMs: 5000,
+    require: { speed: 0, accuracy: 0 },
+    ...extra,
+  }
+}
+
+describe('buildLevelChars（真数据 wubi86）', () => {
+  it('mix：按权重分配题数并合并洗牌', async () => {
+    await ensureScheme('wubi86')
+    const chars = await buildLevelChars(
+      level({
+        length: 40,
+        mix: [
+          { source: 'short1', weight: 1 },
+          { source: 'short2', weight: 3 },
+        ],
+      }),
+      'wubi86',
+    )
+    expect(chars).toHaveLength(40)
+    const [short1, short2] = await Promise.all([
+      buildPool(level({ source: 'short1' }), 'wubi86'),
+      buildPool(level({ source: 'short2' }), 'wubi86'),
+    ])
+    const allowed = new Set([...short1, ...short2])
+    expect(chars.every((c) => allowed.has(c))).toBe(true)
+  })
+
+  it('drill：每字恰好连打 drillRepeat 遍', async () => {
+    await ensureScheme('wubi86')
+    const chars = await buildLevelChars(
+      level({ source: 'short1', pattern: 'drill', drillRepeat: 4, drillShuffle: true }),
+      'wubi86',
+    )
+    expect(chars).toHaveLength(100)
+    const c = counts(chars)
+    expect(c.size).toBe(25)
+    for (const n of c.values()) expect(n).toBe(4)
+  })
+})
+
+describe('buildPool 过滤（真数据 wubi86）', () => {
+  it('idcode + rootCount + shape：双字根识别码·左右/上下型', async () => {
+    await ensureScheme('wubi86')
+    const pool = await buildPool(
+      level({ source: 'idcode', rootCount: 2, shape: [1, 2] }),
+      'wubi86',
+    )
+    expect(pool.length).toBeGreaterThan(0)
+  })
+
+  it('rootCount：四字根全码字', async () => {
+    await ensureScheme('wubi86')
+    const pool = await buildPool(level({ source: 'freq1', rootCount: 4 }), 'wubi86')
+    expect(pool.length).toBeGreaterThan(0)
   })
 })

@@ -19,7 +19,7 @@ export interface CharEntry {
 export interface LevelConfig {
   /** 如 "s1-zigen-heng" */
   id: string
-  type: 'zigen' | 'danzi' | 'article'
+  type: 'zigen' | 'danzi' | 'article' | 'intro'
   /** 如 "横区字根（G F D S A）" */
   title: string
   /** zigen：键位列表；danzi/article：忽略 */
@@ -30,13 +30,29 @@ export interface LevelConfig {
   starts?: string[]
   /** article：篇目 id 列表 */
   articleIds?: string[]
+  /** intro：教学关正文段落 */
+  intro?: string[]
   /** 出题数量（article 为参考字数） */
   length: number
   /** 每键/每字超时（毫秒），超时仅提醒并计数 */
   timeoutMs: number
   /** 每批显示数量（默认 20） */
   batchSize?: number
-  /** 达标要求 */
+  /** 出题模式：drill 表示每字连打 N 遍（口诀 / 全码肌肉记忆训练） */
+  pattern?: 'drill'
+  /** drill 每字连打遍数（默认 1） */
+  drillRepeat?: number
+  /** drill 出题时每局随机字序（默认 false：按 starts 顺序，即口诀序） */
+  drillShuffle?: boolean
+  /** 强制全码：禁用简码 + 空格上屏（全码训练关） */
+  requireFull?: boolean
+  /** 多源按权重混合出题（与 source 互斥，用于一二级简码综合） */
+  mix?: { source: 'short1' | 'short2'; weight: number }[]
+  /** 识别码字型过滤：1 左右 2 上下 3 杂合（source=idcode 时生效） */
+  shape?: (1 | 2 | 3)[]
+  /** 真实字根数过滤：radicals 去掉识别码后的字数（如 3 根字、4 根字） */
+  rootCount?: number
+  /** 达标要求（intro 关忽略） */
   require: { speed: number; accuracy: number }
 }
 
