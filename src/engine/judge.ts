@@ -27,6 +27,14 @@ export interface PracticeSession {
   /** 由调用方传入的时间戳 */
   startAt: number
   finished: boolean
+  /** 强制全码：禁用简码 + 空格上屏，须输满全码方可通过 */
+  requireFull: boolean
+}
+
+/** 创建会话的可选参数 */
+export interface SessionOptions {
+  /** 强制全码（全码训练关用），默认 false */
+  requireFull?: boolean
 }
 
 /** 引擎向视图层抛出的事件 */
@@ -44,7 +52,12 @@ const KEY_RE = /^[a-z ]$/
  * 创建练习会话。
  * 未收录（code 为 null）的字会被跳过。
  */
-export function createSession(chars: string[], scheme: InputScheme, now: number): PracticeSession {
+export function createSession(
+  chars: string[],
+  scheme: InputScheme,
+  now: number,
+  options: SessionOptions = {},
+): PracticeSession {
   const items: PracticeItem[] = []
   for (const char of chars) {
     const code = scheme.code(char)
@@ -61,6 +74,7 @@ export function createSession(chars: string[], scheme: InputScheme, now: number)
     correctChars: 0,
     startAt: now,
     finished: items.length === 0,
+    requireFull: options.requireFull ?? false,
   }
 }
 
@@ -123,7 +137,7 @@ export function feedKey(
   const item = next.items[next.cursor]
 
   if (key === ' ') {
-    if (next.input.length > 0 && item.shorts.includes(next.input)) {
+    if (!next.requireFull && next.input.length > 0 && item.shorts.includes(next.input)) {
       complete(next, events)
     } else {
       reject(next, next.input + ' ', events)

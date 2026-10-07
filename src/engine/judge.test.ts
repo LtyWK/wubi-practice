@@ -110,3 +110,25 @@ describe('feedKey 判定规则', () => {
     }
   })
 })
+
+describe('requireFull 强制全码', () => {
+  it('默认会话 requireFull 为 false', () => {
+    expect(createSession(['好'], scheme, 0).requireFull).toBe(false)
+  })
+
+  it('开启后简码 + 空格不再上屏，空格记为错键', () => {
+    const session = createSession(['中'], scheme, 0, { requireFull: true })
+    const { session: after, events } = feed(session, ['k', ' '])
+    expect(after.finished).toBe(false)
+    expect(after.cursor).toBe(0)
+    expect(events.map((e) => e.type)).toEqual(['key-accept', 'key-reject', 'char-error'])
+    expect(after.items[0].wrongAttempts).toEqual(['k '])
+  })
+
+  it('开启后输满全码仍可完成', () => {
+    const session = createSession(['好'], scheme, 0, { requireFull: true })
+    const { session: after } = feed(session, ['v', 'b'])
+    expect(after.finished).toBe(true)
+    expect(after.correctChars).toBe(1)
+  })
+})

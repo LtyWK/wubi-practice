@@ -17,6 +17,7 @@ function makeSession(
     correctChars,
     startAt,
     finished: false,
+    requireFull: false,
   }
 }
 
