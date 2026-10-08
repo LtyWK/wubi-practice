@@ -1,5 +1,6 @@
 import type { LevelConfig, RadicalWeight, WubiScheme } from '@/types'
 import { loadAllChars, loadFreq1Chars } from './loader'
+import { parseScript } from './script'
 
 /** 是否汉字 */
 export function isHan(c: string): boolean {
@@ -194,11 +195,15 @@ export async function buildPool(lv: LevelConfig, scheme: WubiScheme): Promise<st
 
 /**
  * 按关卡配置生成练习字符流（danzi 关；zigen/article 由视图另行处理）。
+ * - script：按训练脚本顺序出题（提示行不参与）；
  * - mix：多源按权重分配题数，各自取样后合并洗牌；
  * - drill：按池顺序每字连打 drillRepeat 遍（drillShuffle 时每局随机字序）；
  * - 默认：从出题池均匀随机取样。
  */
 export async function buildLevelChars(lv: LevelConfig, scheme: WubiScheme): Promise<string[]> {
+  if (lv.script && lv.script.length > 0) {
+    return parseScript(lv.script).chars
+  }
   if (lv.mix && lv.mix.length > 0) {
     const totalWeight = lv.mix.reduce((sum, m) => sum + m.weight, 0)
     const merged: string[] = []

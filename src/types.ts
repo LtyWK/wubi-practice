@@ -52,6 +52,13 @@ export interface LevelConfig {
   shape?: (1 | 2 | 3)[]
   /** 真实字根数过滤：radicals 去掉识别码后的字数（如 3 根字、4 根字） */
   rootCount?: number
+  /**
+   * 训练脚本（口诀关）：每行字符串。
+   * - `[...]`：提示行，不参与输入；
+   * - 空字符串：空行；
+   * - 其他：训练行，汉字全部按顺序参与输入（标点/空格仅显示）。
+   */
+  script?: string[]
   /** 达标要求（intro 关忽略） */
   require: { speed: number; accuracy: number }
 }
@@ -113,6 +120,12 @@ export interface ProgressData {
 
 /** 文本面板字符状态（V2 五态） */
 export type TextCharState = 'pending' | 'active' | 'done-clean' | 'done-wrong' | 'skip'
+
+/** 文本面板项：字符流（danzi/article）或脚本关的提示行 / 换行 */
+export type PanelItem =
+  | { kind: 'char'; char: string; state: TextCharState }
+  | { kind: 'hint'; text: string }
+  | { kind: 'br' }
 
 /** 键盘按键反馈 */
 export interface KeyFeedback {
