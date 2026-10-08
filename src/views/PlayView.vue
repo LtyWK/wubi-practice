@@ -9,6 +9,7 @@ import TextPanel from '@/components/TextPanel.vue'
 import VirtualKeyboard from '@/components/VirtualKeyboard.vue'
 import { loadArticles, loadRadicalWeights, loadZigen } from '@/data/loader'
 import { buildLevelChars, isHan, randomSequence, weightedSequence } from '@/data/pool'
+import { parseScript, type ParsedScript } from '@/data/script'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
 import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
@@ -25,6 +26,7 @@ import type {
   KeyFeedback,
   LevelConfig,
   MistakeOption,
+  PanelItem,
   RadicalWeight,
   TextCharState,
   ZigenItem,
@@ -39,7 +41,15 @@ const { isStageUnlocked, recordResult } = useLevels()
 const { record, markMastered } = useMistakes()
 const { save, recordCharDone, recordCharError } = useSave()
 const { freeTitle, freeText } = useFreeText()
-const { soundOn, volume, setVolume, hintsOn, setHints, scheme: uiScheme } = useUiSettings()
+const {
+  soundOn,
+  volume,
+  setVolume,
+  hintsOn,
+  setHints,
+  setAlign,
+  scheme: uiScheme,
+} = useUiSettings()
 
 /** 当前输入方案实现（顶部下拉切换方案后刷新页面生效） */
 const scheme = computed(() => getScheme(uiScheme.value))
@@ -106,6 +116,9 @@ const zigenRootErrors = ref<Record<string, number>>({})
 // ---------- 文本模式 ----------
 const session = ref<PracticeSession | null>(null)
 const displayMap = ref<{ char: string; input: number }[]>([])
+/** 脚本关（口诀训练）：解析后的脚本（提示行 + 训练行） */
+const parsedScript = ref<ParsedScript | null>(null)
+const scriptMode = computed(() => Boolean(level.value?.script?.length))
 
 // ---------- 统计 ----------
 const doneCount = computed(() =>
@@ -197,31 +210,36 @@ function makeRadicalTasks(count: number): ZigenTask[] {
 }
 
 /** 随机文字关卡（字根 / 单字）统一字符流：由 TextPanel 按容器宽度自动换行 */
-const linearItems = computed<{ char: string; state: TextCharState }[]>(() => {
+const linearItems = computed<PanelItem[]>(() => {
   if (mode.value === 'zigen') {
     return zigenQueue.value.map((task, i) => {
       let state: TextCharState = 'pending'
       if (i < zigenIndex.value) state = zigenWrong.value[i] ? 'done-wrong' : 'done-clean'
       else if (i === zigenIndex.value) state = 'active'
-      return { char: task.root, state }
+      return { kind: 'char', char: task.root, state }
     })
   }
   return (session.value?.items ?? []).map((it) => ({
+    kind: 'char',
     char: it.char,
     state: stateOf(it.state, it.wrongAttempts.length > 0),
   }))
 })
 
-const articleItems = computed<{ char: string; state: TextCharState }[]>(() => {
+const articleItems = computed<PanelItem[]>(() => {
   const s = session.value
   if (!s) return []
   return displayMap.value.map((d, i) => {
     if (d.input >= 0) {
       const item = s.items[d.input]
-      if (!item) return { char: d.char, state: 'pending' as TextCharState }
-      return { char: d.char, state: stateOf(item.state, item.wrongAttempts.length > 0) }
+      if (!item) return { kind: 'char', char: d.char, state: 'pending' as TextCharState }
+      return {
+        kind: 'char',
+        char: d.char,
+        state: stateOf(item.state, item.wrongAttempts.length > 0),
+      }
     }
-    if (d.char === '\n') return { char: '\n', state: 'skip' as TextCharState }
+    if (d.char === '\n') return { kind: 'br' }
     let prev = -1
     for (let j = i - 1; j >= 0; j -= 1) {
       if (displayMap.value[j].input >= 0) {
@@ -231,11 +249,44 @@ const articleItems = computed<{ char: string; state: TextCharState }[]>(() => {
     }
     const prevItem = prev >= 0 ? s.items[prev] : undefined
     const done = prevItem ? prevItem.state === 'done' : false
-    return { char: d.char, state: done ? 'skip' : 'pending' }
+    return { kind: 'char', char: d.char, state: done ? 'skip' : 'pending' }
   })
 })
 
-const textItems = computed(() => {
+/** 脚本关：提示行（不训练）+ 训练行（汉字绑定会话进度）+ 行尾换行 */
+const scriptItems = computed<PanelItem[]>(() => {
+  const parsed = parsedScript.value
+  const s = session.value
+  if (!parsed) return []
+  const out: PanelItem[] = []
+  for (const line of parsed.lines) {
+    if (line.kind === 'hint') {
+      out.push({ kind: 'hint', text: line.text })
+      continue
+    }
+    if (line.kind === 'blank') {
+      out.push({ kind: 'br' })
+      continue
+    }
+    for (const cell of line.cells) {
+      if (cell.train) {
+        const item = s?.items[cell.inputIndex]
+        out.push({
+          kind: 'char',
+          char: cell.char,
+          state: item ? stateOf(item.state, item.wrongAttempts.length > 0) : 'pending',
+        })
+      } else {
+        out.push({ kind: 'char', char: cell.char, state: 'skip' })
+      }
+    }
+    out.push({ kind: 'br' })
+  }
+  return out
+})
+
+const textItems = computed<PanelItem[]>(() => {
+  if (scriptMode.value) return scriptItems.value
   if (articleMode.value) return articleItems.value
   return linearItems.value
 })
@@ -549,12 +600,17 @@ async function startRound(): Promise<void> {
   const lv = level.value
   if (!lv) return
   if (lv.type === 'intro') return
+  parsedScript.value = null
   if (lv.type === 'zigen') {
     initZigen(
       lv.source === 'radicals' ? makeRadicalTasks(lv.length) : makeZigenTasks(lv.pool, lv.length),
     )
   } else if (lv.type === 'article') {
     await initArticle(lv)
+  } else if (lv.script && lv.script.length > 0) {
+    const parsed = parseScript(lv.script)
+    parsedScript.value = parsed
+    initText(parsed.chars)
   } else {
     initText(await buildLevelChars(lv, uiScheme.value))
   }
@@ -607,6 +663,8 @@ onMounted(async () => {
   }
   // 教学关仅阅读，不进入打字流程
   if (isIntro.value) return
+  // 口诀脚本关：进入时自动居中（仍可手动切换）
+  if (scriptMode.value) setAlign('center')
   await startRound()
 
   window.addEventListener('keydown', onKeydown)

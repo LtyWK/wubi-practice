@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
-import type { TextCharState } from '@/types'
+import type { PanelItem } from '@/types'
 import { useUiSettings } from '@/composables/useUiSettings'
 
 const props = withDefaults(
   defineProps<{
-    /** 待显示字符序列及状态（全量展示，容器内滚动） */
-    items: { char: string; state: TextCharState }[]
+    /** 待显示项序列（全量展示，容器内滚动；含脚本关的提示行与换行） */
+    items: PanelItem[]
     /** 面板标题（文章名 / 关卡名） */
     title?: string
   }>(),
@@ -18,7 +18,7 @@ const box = ref<HTMLElement | null>(null)
 
 /** 当前字进入可视区时自动滚动 */
 watch(
-  () => props.items.findIndex((item) => item.state === 'active'),
+  () => props.items.findIndex((item) => item.kind === 'char' && item.state === 'active'),
   async (index) => {
     if (index < 0) return
     await nextTick()
@@ -57,7 +57,8 @@ watch(
         :class="align === 'center' ? 'text-panel__text--center' : 'text-panel__text--left'"
       >
         <template v-for="(item, i) in props.items" :key="i">
-          <br v-if="item.char === '\n'" />
+          <br v-if="item.kind === 'br'" />
+          <span v-else-if="item.kind === 'hint'" class="tp-hint">{{ item.text }}</span>
           <span
             v-else
             class="tp-char"
@@ -180,5 +181,17 @@ watch(
 
 .tp-char--skip {
   color: var(--text-skip);
+}
+
+/* 提示行：不参与训练，小字、灰色、斜体、整行 */
+.tp-hint {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.8em;
+  font-style: italic;
+  letter-spacing: 0.05em;
+  line-height: 1.8;
+  opacity: 0.85;
 }
 </style>
