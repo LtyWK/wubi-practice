@@ -138,3 +138,29 @@ describe('PlayView 教学关', () => {
     expect(isLevelPassed('s2-intro')).toBe(true)
   })
 })
+
+describe('PlayView 口诀脚本关', () => {
+  it('渲染提示行与分组训练序列，按全码可推进', async () => {
+    routeRef.params.id = 's2-short1-a'
+    unlockStage('s2')
+
+    const wrapper = mount(PlayView)
+    await waitUntil(() => wrapper.find('.tp-hint').exists())
+
+    // 提示行样式与内容
+    const hints = wrapper.findAll('.tp-hint')
+    expect(hints.length).toBeGreaterThan(0)
+    expect(hints[0].text()).toContain('[口诀]')
+    expect(hints.some((h) => h.text().includes('强化肌肉记忆'))).toBe(true)
+
+    // 每组 drill 后的换行（br）存在
+    expect(wrapper.findAll('.text-panel__text br').length).toBeGreaterThan(0)
+
+    // 第一题应为「一」，按全码完成
+    const code = wrapper.find('.hint__code').text().replace(/\s/g, '').toLowerCase()
+    expect(code.length).toBeGreaterThan(0)
+    await typeKeys(code)
+    await waitUntil(() => wrapper.find('.tp-char--done-clean').exists())
+    expect(wrapper.find('.tp-char--done-clean').text()).toBe('一')
+  })
+})

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { loadArticles, loadRadicalWeights, loadZigen } from '@/data/loader'
 import { buildLevelChars, isHan } from '@/data/pool'
+import { parseScript } from '@/data/script'
 import { STAGES } from '@/data/stages'
 import { createSession, feedKey } from '@/engine/judge'
 import { ensureScheme, getScheme } from '@/schemes/registry'
@@ -21,6 +22,20 @@ async function levelChars(lv: LevelConfig, scheme: WubiScheme): Promise<string[]
   }
   return buildLevelChars(lv, scheme)
 }
+
+describe('关卡配置一致性', () => {
+  it('script 关的 length 与脚本训练字数一致', () => {
+    let count = 0
+    for (const stage of STAGES) {
+      for (const level of stage.levels) {
+        if (!level.script) continue
+        count += 1
+        expect(parseScript(level.script).chars.length, level.id).toBe(level.length)
+      }
+    }
+    expect(count).toBeGreaterThan(0)
+  })
+})
 
 for (const scheme of SCHEMES) {
   describe(`关卡冒烟[${scheme}]：按正确编码可自动通关`, () => {
