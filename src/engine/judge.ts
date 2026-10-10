@@ -144,6 +144,12 @@ export function feedKey(
     }
   } else if (item.code.startsWith(next.input + key)) {
     accept(next, key, events)
+  } else if (
+    !next.requireFull &&
+    item.shorts.some((s) => s.startsWith(next.input + key))
+  ) {
+    // 简码可能不是全码前缀（如「有」全码 def、简码 e），须允许简码输入
+    accept(next, key, events)
   } else {
     reject(next, next.input + key, events)
   }

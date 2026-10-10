@@ -37,6 +37,32 @@ describe('关卡配置一致性', () => {
   })
 })
 
+describe('简码上屏冒烟：脚本关按最短简码 + 空格可依次上屏', () => {
+  for (const scheme of SCHEMES) {
+    for (const stage of STAGES) {
+      for (const level of stage.levels) {
+        const script = level.script
+        if (!script) continue
+        it(`${level.id} [${scheme}]`, async () => {
+          await ensureScheme(scheme)
+          const input = getScheme(scheme)
+          const chars = parseScript(script).chars
+          let session = createSession(chars, input, 0)
+          for (let i = 0; i < chars.length; i += 1) {
+            const item = session.items[session.cursor]
+            const shorts = input.shorts(item.char).filter((s) => s.length > 0)
+            const shortest = [...shorts].sort((a, b) => a.length - b.length)[0] ?? item.code
+            for (const key of shortest) session = feedKey(session, key).session
+            if (shortest !== item.code) session = feedKey(session, ' ').session
+            expect(session.cursor, item.char).toBe(i + 1)
+          }
+          expect(session.finished).toBe(true)
+        })
+      }
+    }
+  }
+})
+
 for (const scheme of SCHEMES) {
   describe(`关卡冒烟[${scheme}]：按正确编码可自动通关`, () => {
     for (const stage of STAGES) {

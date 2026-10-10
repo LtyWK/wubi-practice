@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import type { InputScheme } from '@/schemes/base'
 import { createSession, feedKey, type EngineEvent, type PracticeSession } from './judge'
 
-const CODES: Record<string, string> = { 好: 'vb', 中: 'khk', 是: 'jghu', 我: 'trnt' }
+const CODES: Record<string, string> = { 好: 'vb', 中: 'khk', 是: 'jghu', 我: 'trnt', 有: 'def' }
 const SHORTS: Record<string, string[]> = {
   好: ['v', 'vb'],
   中: ['k', 'kh'],
   是: ['j', 'jgh'],
+  有: ['e'],
 }
 
 const scheme: InputScheme = {
@@ -108,6 +109,32 @@ describe('feedKey 判定规则', () => {
       expect(result.events).toEqual([])
       expect(result.session).toBe(base)
     }
+  })
+})
+
+describe('简码非全码前缀', () => {
+  it('「有」全码 def / 简码 e：可直接 e + 空格上屏', () => {
+    const { session } = feed(createSession(['有'], scheme, 0), ['e', ' '])
+    expect(session.finished).toBe(true)
+    expect(session.correctKeys).toBe(1)
+  })
+
+  it('「有」仍可按全码 d e f 完成', () => {
+    const { session } = feed(createSession(['有'], scheme, 0), ['d', 'e', 'f'])
+    expect(session.finished).toBe(true)
+  })
+
+  it('无关按键仍被拒绝', () => {
+    const { session, events } = feed(createSession(['有'], scheme, 0), ['x'])
+    expect(session.input).toBe('')
+    expect(events[0].type).toBe('key-reject')
+  })
+
+  it('requireFull 下简码键被拒绝（必须走全码）', () => {
+    const session = createSession(['有'], scheme, 0, { requireFull: true })
+    const { session: after, events } = feed(session, ['e'])
+    expect(after.input).toBe('')
+    expect(events[0].type).toBe('key-reject')
   })
 })
 
