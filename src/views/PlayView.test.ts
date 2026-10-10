@@ -156,11 +156,26 @@ describe('PlayView 口诀脚本关', () => {
     // 每组 drill 后的换行（br）存在
     expect(wrapper.findAll('.text-panel__text br').length).toBeGreaterThan(0)
 
+    // 一级简码关显示简码提示
+    const short1 = wrapper.find('.hint__short1')
+    expect(short1.exists()).toBe(true)
+    expect(short1.text()).toContain('一级简码')
+    expect(short1.text()).toContain('G')
+
     // 第一题应为「一」，按全码完成
     const code = wrapper.find('.hint__code').text().replace(/\s/g, '').toLowerCase()
     expect(code.length).toBeGreaterThan(0)
     await typeKeys(code)
     await waitUntil(() => wrapper.find('.tp-char--done-clean').exists())
     expect(wrapper.find('.tp-char--done-clean').text()).toBe('一')
+  })
+
+  it('全码训练关（requireFull）不显示一级简码提示', async () => {
+    routeRef.params.id = 's2-short1-full'
+    unlockStage('s2')
+
+    const wrapper = mount(PlayView)
+    await waitUntil(() => wrapper.find('.hint__code').exists())
+    expect(wrapper.find('.hint__short1').exists()).toBe(false)
   })
 })

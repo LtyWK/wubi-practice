@@ -330,7 +330,17 @@ const currentHint = computed(() => {
   if (!s || s.finished) return null
   const item = s.items[s.cursor]
   if (!item) return null
-  return { char: item.char, code: item.code, items: scheme.value.hint(item.char), input: s.input }
+  // 一级简码训练关：额外提示当前字的一级简码
+  const short1 = level.value?.showShort1
+    ? item.shorts.find((short) => short.length === 1)
+    : undefined
+  return {
+    char: item.char,
+    code: item.code,
+    items: scheme.value.hint(item.char),
+    input: s.input,
+    short1,
+  }
 })
 
 // ---------- 达标与结算 ----------
@@ -710,6 +720,7 @@ onUnmounted(() => {
       :code="currentHint.code"
       :items="currentHint.items"
       :input="currentHint.input"
+      :short1="currentHint.short1"
     />
 
     <div class="keyboard-wrap">

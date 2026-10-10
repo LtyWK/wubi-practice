@@ -9,6 +9,8 @@ const props = defineProps<{
   items: HintItem[]
   /** 已接受的输入 */
   input: string
+  /** 当前字的一级简码（仅一级简码训练关传入） */
+  short1?: string
 }>()
 
 const codeChars = computed(() => props.code.split(''))
@@ -50,6 +52,9 @@ const { codeHintOn, setCodeHint } = useUiSettings()
             {{ c.toUpperCase() }}
           </span>
         </span>
+      </div>
+      <div v-if="props.short1" class="hint__short1">
+        一级简码：<span class="hint__short1-key">{{ props.short1.toUpperCase() }}</span> + 空格
       </div>
     </div>
   </div>
@@ -131,6 +136,24 @@ const { codeHintOn, setCodeHint } = useUiSettings()
 .hint__roots {
   color: var(--color-text-muted);
   font-size: var(--font-base);
+}
+
+/* 一级简码提示（仅一级简码训练关显示） */
+.hint__short1 {
+  margin-top: var(--space-1);
+  font-size: var(--font-sm);
+  color: var(--color-primary);
+}
+
+.hint__short1-key {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 6px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-weak);
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
 /* 字根加粗（字体为单字重轮廓字体，浏览器合成加粗） */

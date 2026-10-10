@@ -176,6 +176,7 @@ export const STAGES: StageConfig[] = [
           '一 地 在 要 工， 上 是 中 国 同。',
           '一 地 在 要 工， 上 是 中 国 同。',
         ],
+        showShort1: true,
       }),
       danzi('s2-short1-b', '一级简码·口诀下半段', undefined, undefined, 285, 5000, 35, 0.85, {
         script: [
@@ -216,6 +217,7 @@ export const STAGES: StageConfig[] = [
           '和 的 有 人 我， 主 产 不 为 这， 民 了 发 以 经。',
           '和 的 有 人 我， 主 产 不 为 这， 民 了 发 以 经。',
         ],
+        showShort1: true,
       }),
       danzi('s2-short1-full', '一级简码·全码训练', 'short1', undefined, 250, 5000, 30, 0.9, {
         pattern: 'drill',
@@ -223,11 +225,14 @@ export const STAGES: StageConfig[] = [
         drillShuffle: true,
         requireFull: true,
       }),
-      danzi('s2-short1-mix', '一级简码混合', 'short1', undefined, 100, 5000, 40),
+      danzi('s2-short1-mix', '一级简码混合', 'short1', undefined, 100, 5000, 40, 0.85, {
+        showShort1: true,
+      }),
       danzi('s2-short2-a', '二级简码·首码横竖区', 'short2', HENG.concat(SHU), 100, 6000, 40),
       danzi('s2-short2-b', '二级简码·首码撇捺折区', 'short2', [...PIE, ...NA, ...ZHE], 100, 6000, 40),
       danzi('s2-short2-mix', '二级简码·全键位混合', 'short2', undefined, 100, 5000, 45),
       danzi('s2-short-all', '一二级简码综合', undefined, undefined, 150, 5000, 50, 0.85, {
+        showShort1: true,
         mix: [
           { source: 'short1', weight: 1 },
           { source: 'short2', weight: 3 },

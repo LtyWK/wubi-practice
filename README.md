@@ -29,7 +29,7 @@
 | 框架 | Vue 3（SFC + `<script setup>` + 组合式 API） |
 | 构建 | Vite 5 |
 | 路由 | vue-router 4（hash 模式，适配 GitHub Pages） |
-| 测试 | Vitest + @vue/test-utils（151 项，含 86/98 两套各 35 关自动通关冒烟） |
+| 测试 | Vitest + @vue/test-utils（160 项，含 86/98 两套各 35 关自动通关冒烟） |
 | 质量 | ESLint 9（flat config）+ typescript-eslint + Prettier |
 | 包管理 | pnpm |
 

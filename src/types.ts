@@ -59,6 +59,8 @@ export interface LevelConfig {
    * - 其他：训练行，汉字全部按顺序参与输入（标点/空格仅显示）。
    */
   script?: string[]
+  /** 在拆字面板显示当前字的一级简码提示（一级简码训练关用） */
+  showShort1?: boolean
   /** 达标要求（intro 关忽略） */
   require: { speed: number; accuracy: number }
 }
