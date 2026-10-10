@@ -123,7 +123,7 @@ function sizeOf(key: string): number {
         </span>
       </span>
     </div>
-    <div class="vk__row">
+    <div class="vk__row vk__row--bottom">
       <span
         class="vk__key vk__key--space"
         :class="keyClass(' ')"
@@ -131,6 +131,12 @@ function sizeOf(key: string): number {
         aria-label="空格键"
         @pointerdown.prevent="onPress(' ')"
       >空 格</span>
+      <span
+        class="vk__key vk__key--backspace"
+        role="button"
+        aria-label="退格键"
+        @pointerdown.prevent="onPress('Backspace')"
+      >⌫</span>
     </div>
   </div>
 </template>
@@ -379,15 +385,28 @@ function sizeOf(key: string): number {
 }
 
 .vk__key--space {
-  flex: 0 0 auto;
-  width: min(460px, 100%);
-  max-width: 100%;
+  flex: 1 1 auto;
+  width: auto;
+  max-width: 520px;
   aspect-ratio: auto;
   height: 44px;
   align-items: center;
   justify-content: center;
   font-size: var(--font-base);
   font-weight: 600;
+  color: var(--color-text-muted);
+  padding: 0;
+}
+
+/* 退格键：与空格同排，仅文本模式生效 */
+.vk__key--backspace {
+  flex: 0 0 auto;
+  width: 84px;
+  aspect-ratio: auto;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-lg);
   color: var(--color-text-muted);
   padding: 0;
 }
@@ -423,8 +442,13 @@ function sizeOf(key: string): number {
   }
 
   .vk__key--space {
-    width: 90%;
     height: 32px;
+  }
+
+  .vk__key--backspace {
+    width: 56px;
+    height: 32px;
+    font-size: var(--font-base);
   }
 }
 </style>

@@ -3,10 +3,17 @@ import { describe, expect, it } from 'vitest'
 import VirtualKeyboard from './VirtualKeyboard.vue'
 
 describe('VirtualKeyboard', () => {
-  it('渲染 26 个字母键与空格键', () => {
+  it('渲染 26 个字母键、空格键与退格键', () => {
     const wrapper = mount(VirtualKeyboard)
-    expect(wrapper.findAll('.vk__key')).toHaveLength(27)
+    expect(wrapper.findAll('.vk__key')).toHaveLength(28)
     expect(wrapper.find('.vk__key--space').exists()).toBe(true)
+    expect(wrapper.find('.vk__key--backspace').exists()).toBe(true)
+  })
+
+  it('点按退格键派发 Backspace', async () => {
+    const wrapper = mount(VirtualKeyboard)
+    await wrapper.find('.vk__key--backspace').trigger('pointerdown')
+    expect(wrapper.emitted('press')?.[0]).toEqual(['Backspace'])
   })
 
   it('高亮下一步按键', () => {

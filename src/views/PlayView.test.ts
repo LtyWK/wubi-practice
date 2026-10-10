@@ -26,7 +26,7 @@ describe('PlayView 字根模式', () => {
     const wrapper = mount(PlayView)
     await waitUntil(() => wrapper.findAll('.tp-char').length > 0)
 
-    expect(wrapper.findAll('.vk__key')).toHaveLength(27)
+    expect(wrapper.findAll('.vk__key')).toHaveLength(28)
     expect(wrapper.findAll('.tp-char').length).toBeGreaterThan(0)
 
     const hint = wrapper.find('.vk__key--hint .vk__letter')
@@ -116,6 +116,30 @@ describe('PlayView 单字模式', () => {
     expect(code.length).toBeGreaterThan(0)
     await typeKeys(code)
 
+    await waitUntil(() => wrapper.find('.tp-char--done-clean').exists())
+    expect(wrapper.find('.tp-char--done-clean').exists()).toBe(true)
+  })
+})
+
+describe('PlayView 退格', () => {
+  it('可退格删除已输入字符（编码提示回退）', async () => {
+    routeRef.params.id = 's2-short1-mix'
+    unlockStage('s2')
+
+    const wrapper = mount(PlayView)
+    await waitUntil(() => wrapper.find('.hint__code').exists())
+
+    const code = wrapper.find('.hint__code').text().replace(/\s/g, '').toLowerCase()
+    pressKey(code[0])
+    await nextTick()
+    expect(wrapper.findAll('.hint__code-char--typed')).toHaveLength(1)
+
+    pressKey('Backspace')
+    await nextTick()
+    expect(wrapper.findAll('.hint__code-char--typed')).toHaveLength(0)
+
+    // 退格后仍可正常完成当前字
+    await typeKeys(code)
     await waitUntil(() => wrapper.find('.tp-char--done-clean').exists())
     expect(wrapper.find('.tp-char--done-clean').exists()).toBe(true)
   })

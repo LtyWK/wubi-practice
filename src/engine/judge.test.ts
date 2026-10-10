@@ -159,3 +159,44 @@ describe('requireFull 强制全码', () => {
     expect(after.correctChars).toBe(1)
   })
 })
+
+describe('退格', () => {
+  it('删除当前字已输入末位字符并派发 key-back，不计入击键统计', () => {
+    const s1 = feed(createSession(['我'], scheme, 0), ['t']).session
+    expect(s1.input).toBe('t')
+    const { session: s2, events } = feedKey(s1, 'Backspace')
+    expect(s2.input).toBe('')
+    expect(events.map((e) => e.type)).toEqual(['key-back'])
+    expect(s2.totalKeys).toBe(s1.totalKeys)
+    expect(s2.correctKeys).toBe(s1.correctKeys)
+    expect(s2.cursor).toBe(0)
+  })
+
+  it('空输入时退格无事件、会话不变', () => {
+    const base = createSession(['我'], scheme, 0)
+    const result = feedKey(base, 'Backspace')
+    expect(result.events).toEqual([])
+    expect(result.session).toBe(base)
+  })
+
+  it('已发生的错误计数不因退格回滚', () => {
+    const s1 = feed(createSession(['我'], scheme, 0), ['x']).session
+    expect(s1.totalKeys).toBe(1)
+    const s2 = feed(s1, ['t', 'Backspace']).session
+    expect(s2.totalKeys).toBe(2)
+    expect(s2.correctKeys).toBe(1)
+    expect(s2.input).toBe('')
+  })
+
+  it('退格后可重新输入并完成', () => {
+    const { session } = feed(createSession(['好'], scheme, 0), ['v', 'Backspace', 'v', 'b'])
+    expect(session.finished).toBe(true)
+    expect(session.correctChars).toBe(1)
+  })
+
+  it('requireFull 下同样支持退格', () => {
+    const session = createSession(['好'], scheme, 0, { requireFull: true })
+    const { session: after } = feed(session, ['v', 'Backspace', 'v', 'b'])
+    expect(after.finished).toBe(true)
+  })
+})

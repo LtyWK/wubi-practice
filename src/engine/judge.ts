@@ -41,12 +41,16 @@ export interface SessionOptions {
 export type EngineEvent =
   | { type: 'key-accept' }
   | { type: 'key-reject'; expect: string; actual: string }
+  | { type: 'key-back' }
   | { type: 'char-done'; char: string }
   | { type: 'char-error'; char: string; expect: string; actual: string }
   | { type: 'session-done' }
 
 /** 仅响应小写字母与空格 */
 const KEY_RE = /^[a-z ]$/
+
+/** 退格键名（视图层与引擎的约定字符串） */
+export const KEY_BACKSPACE = 'Backspace'
 
 /**
  * 创建练习会话。
@@ -124,13 +128,24 @@ function reject(session: PracticeSession, actual: string, events: EngineEvent[])
 /**
  * 处理一次按键。
  * 返回新的会话与本次产生的事件列表；会话不满足输入条件时原样返回。
+ * 退格仅删除当前字已接受输入的末位字符，不计入击键统计（已发生的错误不回滚）。
  */
 export function feedKey(
   session: PracticeSession,
   key: string,
 ): { session: PracticeSession; events: EngineEvent[] } {
   const events: EngineEvent[] = []
-  if (session.finished || !KEY_RE.test(key)) {
+  if (session.finished) {
+    return { session, events }
+  }
+  if (key === KEY_BACKSPACE) {
+    if (session.input.length === 0) return { session, events }
+    const next = clone(session)
+    next.input = next.input.slice(0, -1)
+    events.push({ type: 'key-back' })
+    return { session: next, events }
+  }
+  if (!KEY_RE.test(key)) {
     return { session, events }
   }
   const next = clone(session)

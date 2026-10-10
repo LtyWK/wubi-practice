@@ -12,7 +12,13 @@ import { buildLevelChars, isHan, randomSequence, weightedSequence } from '@/data
 import { parseScript, type ParsedScript } from '@/data/script'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
-import { createSession, feedKey, type PracticeItem, type PracticeSession } from '@/engine/judge'
+import {
+  createSession,
+  feedKey,
+  KEY_BACKSPACE,
+  type PracticeItem,
+  type PracticeSession,
+} from '@/engine/judge'
 import { checkTimeout, elapsed, startChar, type CharTimer } from '@/engine/timer'
 import { ensureScheme, getScheme } from '@/schemes/registry'
 import { playKeySound } from '@/audio/sound'
@@ -525,6 +531,11 @@ function handleTextKey(key: string): void {
   for (const ev of result.events) {
     if (ev.type === 'key-accept') setFeedback(key, 'ok')
     else if (ev.type === 'key-reject') setFeedback(key, 'bad')
+    else if (ev.type === 'key-back') {
+      // 退格：清除反馈高亮，不做按键音
+      feedback.value = null
+      sticky.value = null
+    }
     if (ev.type === 'char-error') {
       record(ev.char, ev.expect, ev.actual)
       recordCharError(ev.char)
@@ -546,6 +557,13 @@ function handleTextKey(key: string): void {
 /** 统一输入入口：物理键盘与虚拟键盘点按共用 */
 function handleInput(key: string): void {
   if (finished.value || paused.value) return
+  if (key === KEY_BACKSPACE) {
+    // 退格：仅文本模式下、已有输入时生效（字根关与未开始忽略）
+    if (!started.value || mode.value === 'zigen') return
+    if (!session.value || session.value.input.length === 0) return
+    handleTextKey(key)
+    return
+  }
   if (!/^[a-z ]$/.test(key)) return
   startIfNeeded()
   if (mode.value === 'zigen') handleZigenKey(key)
@@ -553,6 +571,11 @@ function handleInput(key: string): void {
 }
 
 function onKeydown(e: KeyboardEvent): void {
+  if (e.key === KEY_BACKSPACE) {
+    e.preventDefault()
+    handleInput(KEY_BACKSPACE)
+    return
+  }
   const key = e.key.toLowerCase()
   if (key === ' ') e.preventDefault()
   handleInput(key)
