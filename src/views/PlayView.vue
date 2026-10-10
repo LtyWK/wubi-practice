@@ -12,7 +12,7 @@ import { buildLevelChars, isHan, randomSequence, weightedSequence } from '@/data
 import { parseScript, type ParsedScript } from '@/data/script'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { buildDrillPool } from '@/engine/drill'
-import { createSession, feedKey, type PracticeSession } from '@/engine/judge'
+import { createSession, feedKey, type PracticeItem, type PracticeSession } from '@/engine/judge'
 import { checkTimeout, elapsed, startChar, type CharTimer } from '@/engine/timer'
 import { ensureScheme, getScheme } from '@/schemes/registry'
 import { playKeySound } from '@/audio/sound'
@@ -219,11 +219,26 @@ const linearItems = computed<PanelItem[]>(() => {
       return { kind: 'char', char: task.root, state }
     })
   }
-  return (session.value?.items ?? []).map((it) => ({
+  const src = session.value?.items ?? []
+  const cell = (it: PracticeItem): PanelItem => ({
     kind: 'char',
     char: it.char,
     state: stateOf(it.state, it.wrongAttempts.length > 0),
-  }))
+  })
+  // drill 关：每字连打的组独占一行（组尾换行）；随机段保持流式
+  if (level.value?.pattern === 'drill') {
+    const out: PanelItem[] = []
+    let i = 0
+    while (i < src.length) {
+      let j = i
+      while (j < src.length && src[j].char === src[i].char) j += 1
+      for (let k = i; k < j; k += 1) out.push(cell(src[k]))
+      if (j - i >= 2 && j < src.length) out.push({ kind: 'br' })
+      i = j
+    }
+    return out
+  }
+  return src.map(cell)
 })
 
 const articleItems = computed<PanelItem[]>(() => {

@@ -179,6 +179,35 @@ describe('buildLevelChars（真数据 wubi86）', () => {
     expect(c.size).toBe(25)
     for (const n of c.values()) expect(n).toBe(4)
   })
+
+  it('drill：前段每字连打 5 遍，后段均匀随机补足（125 + 125）', async () => {
+    await ensureScheme('wubi86')
+    const chars = await buildLevelChars(
+      level({
+        source: 'short1',
+        pattern: 'drill',
+        drillRepeat: 5,
+        drillShuffle: true,
+        length: 250,
+      }),
+      'wubi86',
+    )
+    expect(chars).toHaveLength(250)
+
+    // 前 125：每字连续 5 个，组与组之间不同
+    const head = chars.slice(0, 125)
+    for (let i = 0; i < head.length; i += 5) {
+      expect(head.slice(i, i + 5)).toEqual(new Array(5).fill(head[i]))
+    }
+    for (let i = 5; i < head.length; i += 5) expect(head[i]).not.toBe(head[i - 1])
+
+    // 后 125：均匀随机（25 字 × 5，无相邻重复）
+    const tail = chars.slice(125)
+    expect(hasAdjacentDuplicate(tail)).toBe(false)
+    const c = counts(tail)
+    expect(c.size).toBe(25)
+    for (const n of c.values()) expect(n).toBe(5)
+  })
 })
 
 describe('buildPool 过滤（真数据 wubi86）', () => {

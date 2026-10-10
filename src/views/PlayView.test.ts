@@ -170,12 +170,14 @@ describe('PlayView 口诀脚本关', () => {
     expect(wrapper.find('.tp-char--done-clean').text()).toBe('一')
   })
 
-  it('全码训练关（requireFull）不显示一级简码提示', async () => {
+  it('全码训练关（requireFull）不显示一级简码提示，且 drill 分组换行', async () => {
     routeRef.params.id = 's2-short1-full'
     unlockStage('s2')
 
     const wrapper = mount(PlayView)
     await waitUntil(() => wrapper.find('.hint__code').exists())
     expect(wrapper.find('.hint__short1').exists()).toBe(false)
+    // 每字连打 5 遍为一组，组尾换行
+    expect(wrapper.findAll('.text-panel__text br').length).toBeGreaterThan(0)
   })
 })

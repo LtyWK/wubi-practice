@@ -107,7 +107,7 @@ const ALL_KEYS = [...HENG, ...SHU, ...PIE, ...NA, ...ZHE]
  * - 字根关：单区 200 题（每键约 40 次）；全键位综合 300 题（每键约 12 次）
  * - 常用字根强化：300 题，按一级常用字中字根的使用频率加权，高频字根更多出现
  * - 简码关：100 题；口诀关按训练脚本分组出题（全文熟悉 → 逐句 drill 每字 10 遍 → 全文强化）
- * - 全码训练（s2-short1-full）：250 题（25 字 × 10 遍），每局随机字序，强制全码
+ * - 全码训练（s2-short1-full）：250 题 = 每字连打 5 遍（前 125）+ 均匀随机（后 125），每局随机字序，强制全码
  * - 常用字/识别码关：100–150 题
  * - 文章关：整篇连续输入（length 为字数参考，实际按篇目字数）
  * - 教学关（intro）：纯阅读，阅读完毕即达标
@@ -220,8 +220,9 @@ export const STAGES: StageConfig[] = [
         showShort1: true,
       }),
       danzi('s2-short1-full', '一级简码·全码训练', 'short1', undefined, 250, 5000, 30, 0.9, {
+        // 前 125 题：每字连打 5 遍（每字一行）；后 125 题：25 字均匀随机
         pattern: 'drill',
-        drillRepeat: 10,
+        drillRepeat: 5,
         drillShuffle: true,
         requireFull: true,
       }),
