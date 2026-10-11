@@ -226,7 +226,7 @@ export const STAGES: StageConfig[] = [
         drillShuffle: true,
         requireFull: true,
       }),
-      danzi('s2-short1-mix', '一级简码混合', 'short1', undefined, 100, 5000, 40, 0.85, {
+      danzi('s2-short1-mix', '一级简码混合', 'short1', undefined, 200, 5000, 40, 0.85, {
         showShort1: true,
       }),
       danzi('s2-short2-a', '二级简码·首码横竖区', 'short2', HENG.concat(SHU), 100, 6000, 40),
