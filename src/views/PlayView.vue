@@ -351,16 +351,22 @@ const currentHint = computed(() => {
   if (!s || s.finished) return null
   const item = s.items[s.cursor]
   if (!item) return null
-  // 一级简码训练关：额外提示当前字的一级简码
-  const short1 = level.value?.showShort1
-    ? item.shorts.find((short) => short.length === 1)
-    : undefined
+  // 简码提示：一级简码关只显示一级；二级简码关显示规则说明与全部层级
+  const lv = level.value
+  let shorts: string[] = []
+  if (lv?.showShorts) {
+    shorts = [...item.shorts].sort((a, b) => a.length - b.length)
+  } else if (lv?.showShort1) {
+    const one = item.shorts.find((short) => short.length === 1)
+    if (one) shorts = [one]
+  }
   return {
     char: item.char,
     code: item.code,
     items: scheme.value.hint(item.char),
     input: s.input,
-    short1,
+    shorts,
+    guide: Boolean(lv?.showShorts),
   }
 })
 
@@ -758,7 +764,8 @@ onUnmounted(() => {
       :code="currentHint.code"
       :items="currentHint.items"
       :input="currentHint.input"
-      :short1="currentHint.short1"
+      :shorts="currentHint.shorts"
+      :guide="currentHint.guide"
     />
 
     <div class="keyboard-wrap">

@@ -229,11 +229,18 @@ export const STAGES: StageConfig[] = [
       danzi('s2-short1-mix', '一级简码混合', 'short1', undefined, 200, 5000, 40, 0.85, {
         showShort1: true,
       }),
-      danzi('s2-short2-a', '二级简码·首码横竖区', 'short2', HENG.concat(SHU), 100, 6000, 40),
-      danzi('s2-short2-b', '二级简码·首码撇捺折区', 'short2', [...PIE, ...NA, ...ZHE], 100, 6000, 40),
-      danzi('s2-short2-mix', '二级简码·全键位混合', 'short2', undefined, 100, 5000, 45),
+      danzi('s2-short2-a', '二级简码·首码横竖区', 'short2', HENG.concat(SHU), 100, 6000, 40, 0.85, {
+        showShorts: true,
+      }),
+      danzi('s2-short2-b', '二级简码·首码撇捺折区', 'short2', [...PIE, ...NA, ...ZHE], 100, 6000, 40, 0.85, {
+        showShorts: true,
+      }),
+      danzi('s2-short2-mix', '二级简码·全键位混合', 'short2', undefined, 100, 5000, 45, 0.85, {
+        showShorts: true,
+      }),
       danzi('s2-short-all', '一二级简码综合', undefined, undefined, 150, 5000, 50, 0.85, {
         showShort1: true,
+        showShorts: true,
         mix: [
           { source: 'short1', weight: 1 },
           { source: 'short2', weight: 3 },

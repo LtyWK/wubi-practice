@@ -66,6 +66,12 @@ describe('feedKey 判定规则', () => {
     expect(session.correctKeys).toBe(2)
   })
 
+  it('三级简码 + 空格上屏', () => {
+    const { session } = feed(createSession(['是'], scheme, 0), ['j', 'g', 'h', ' '])
+    expect(session.finished).toBe(true)
+    expect(session.correctKeys).toBe(3)
+  })
+
   it('错键拒绝且已接受输入保留', () => {
     const { session, events } = feed(createSession(['好'], scheme, 0), ['v', 'x'])
     expect(session.input).toBe('v')

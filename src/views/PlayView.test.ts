@@ -181,10 +181,10 @@ describe('PlayView 口诀脚本关', () => {
     expect(wrapper.findAll('.text-panel__text br').length).toBeGreaterThan(0)
 
     // 一级简码关显示简码提示
-    const short1 = wrapper.find('.hint__short1')
-    expect(short1.exists()).toBe(true)
-    expect(short1.text()).toContain('一级简码')
-    expect(short1.text()).toContain('G')
+    const shorts = wrapper.find('.hint__shorts')
+    expect(shorts.exists()).toBe(true)
+    expect(shorts.text()).toContain('一级简码')
+    expect(shorts.text()).toContain('G')
 
     // 第一题应为「一」，按全码完成
     const code = wrapper.find('.hint__code').text().replace(/\s/g, '').toLowerCase()
@@ -194,14 +194,33 @@ describe('PlayView 口诀脚本关', () => {
     expect(wrapper.find('.tp-char--done-clean').text()).toBe('一')
   })
 
-  it('全码训练关（requireFull）不显示一级简码提示，且 drill 分组换行', async () => {
+  it('全码训练关（requireFull）不显示简码提示，且 drill 分组换行', async () => {
     routeRef.params.id = 's2-short1-full'
     unlockStage('s2')
 
     const wrapper = mount(PlayView)
     await waitUntil(() => wrapper.find('.hint__code').exists())
-    expect(wrapper.find('.hint__short1').exists()).toBe(false)
+    expect(wrapper.find('.hint__shorts').exists()).toBe(false)
     // 每字连打 5 遍为一组，组尾换行
     expect(wrapper.findAll('.text-panel__text br').length).toBeGreaterThan(0)
+  })
+
+  it('二级简码关显示简码规则说明与当前字各级简码', async () => {
+    routeRef.params.id = 's2-short2-a'
+    unlockStage('s2')
+
+    const wrapper = mount(PlayView)
+    await waitUntil(() => wrapper.find('.hint__shorts').exists())
+
+    const guide = wrapper.find('.hint__short-guide')
+    expect(guide.exists()).toBe(true)
+    expect(guide.text()).toContain('一级简码：打 1 个键 + 空格')
+    expect(guide.text()).toContain('二级简码：打 2 个键 + 空格')
+    expect(guide.text()).toContain('三级简码：打 3 个键 + 空格')
+
+    // 当前字至少有二级简码提示
+    const items = wrapper.findAll('.hint__short-item')
+    expect(items.length).toBeGreaterThan(0)
+    expect(items.some((i) => i.text().includes('二级简码'))).toBe(true)
   })
 })

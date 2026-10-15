@@ -9,12 +9,21 @@ const props = defineProps<{
   items: HintItem[]
   /** 已接受的输入 */
   input: string
-  /** 当前字的一级简码（仅一级简码训练关传入） */
-  short1?: string
+  /** 待显示的简码提示（按层级升序，如 ["x","xc","xca"]） */
+  shorts?: string[]
+  /** 是否展示简码规则说明（一级/二级/三级打法） */
+  guide?: boolean
 }>()
 
 const codeChars = computed(() => props.code.split(''))
 const { codeHintOn, setCodeHint } = useUiSettings()
+
+function shortName(len: number): string {
+  if (len === 1) return '一级简码'
+  if (len === 2) return '二级简码'
+  if (len === 3) return '三级简码'
+  return `${len} 级简码`
+}
 </script>
 
 <template>
@@ -53,8 +62,18 @@ const { codeHintOn, setCodeHint } = useUiSettings()
           </span>
         </span>
       </div>
-      <div v-if="props.short1" class="hint__short1">
-        一级简码：<span class="hint__short1-key">{{ props.short1.toUpperCase() }}</span> + 空格
+      <div v-if="props.shorts && props.shorts.length > 0" class="hint__shorts">
+        <p v-if="props.guide" class="hint__short-guide">
+          一级简码：打 1 个键 + 空格，共 25 个最常用字。<br />
+          二级简码：打 2 个键 + 空格。<br />
+          三级简码：打 3 个键 + 空格。
+        </p>
+        <div v-for="(short, i) in props.shorts" :key="i" class="hint__short-item">
+          {{ shortName(short.length) }}：<span class="hint__short-key">{{
+            short.toUpperCase()
+          }}</span>
+          + 空格
+        </div>
       </div>
     </div>
   </div>
@@ -138,14 +157,25 @@ const { codeHintOn, setCodeHint } = useUiSettings()
   font-size: var(--font-base);
 }
 
-/* 一级简码提示（仅一级简码训练关显示） */
-.hint__short1 {
+/* 简码提示（一级简码关 / 二级简码关显示） */
+.hint__shorts {
   margin-top: var(--space-1);
   font-size: var(--font-sm);
   color: var(--color-primary);
 }
 
-.hint__short1-key {
+.hint__short-guide {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text-muted);
+  font-size: 0.8em;
+  line-height: 1.7;
+}
+
+.hint__short-item + .hint__short-item {
+  margin-top: 2px;
+}
+
+.hint__short-key {
   display: inline-block;
   min-width: 1.4em;
   padding: 0 6px;

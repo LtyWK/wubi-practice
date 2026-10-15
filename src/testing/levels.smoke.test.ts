@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadArticles, loadRadicalWeights, loadZigen } from '@/data/loader'
-import { buildLevelChars, isHan } from '@/data/pool'
+import { buildLevelChars, buildPool, isHan, sample } from '@/data/pool'
 import { parseScript } from '@/data/script'
 import { STAGES } from '@/data/stages'
 import { createSession, feedKey } from '@/engine/judge'
@@ -35,6 +35,33 @@ describe('关卡配置一致性', () => {
     }
     expect(count).toBeGreaterThan(0)
   })
+})
+
+describe('简码上屏冒烟：二级简码关每字各级简码 + 空格均可上屏', () => {
+  for (const scheme of SCHEMES) {
+    for (const stage of STAGES) {
+      for (const level of stage.levels) {
+        if (level.source !== 'short2') continue
+        it(`${level.id} [${scheme}]`, async () => {
+          await ensureScheme(scheme)
+          const input = getScheme(scheme)
+          const pool = await buildPool(level, scheme)
+          const chars = [...new Set(sample(pool, 100))]
+          expect(chars.length).toBeGreaterThan(0)
+          for (const ch of chars) {
+            const shorts = input.shorts(ch)
+            expect(shorts.length, ch).toBeGreaterThan(0)
+            for (const short of shorts) {
+              let session = createSession([ch], input, 0)
+              for (const key of short) session = feedKey(session, key).session
+              session = feedKey(session, ' ').session
+              expect(session.finished, `${ch} 打 ${short} + 空格`).toBe(true)
+            }
+          }
+        })
+      }
+    }
+  }
 })
 
 describe('简码上屏冒烟：脚本关按最短简码 + 空格可依次上屏', () => {
