@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { LevelConfig, RadicalWeight } from '@/types'
 import { ensureScheme } from '@/schemes/registry'
+import { loadAllChars } from './loader'
 import { buildLevelChars, buildPool, drillSequence, randomSequence, sample, shapeOfIdcode, shuffle, weightedSequence } from './pool'
 
 function rw(key: string, count: number): RadicalWeight {
@@ -145,6 +146,42 @@ function level(extra: Partial<LevelConfig>): LevelConfig {
     ...extra,
   }
 }
+
+describe('官方简码表一致性（真数据 wubi86）', () => {
+  const SHORT1: Record<string, string> = {
+    g: '一', f: '地', d: '在', s: '要', a: '工',
+    h: '上', j: '是', k: '中', l: '国', m: '同',
+    t: '和', r: '的', e: '有', w: '人', q: '我',
+    y: '主', u: '产', i: '不', o: '为', p: '这',
+    n: '民', b: '了', v: '发', c: '以', x: '经',
+  }
+
+  it('一级简码恰为官方 25 字', async () => {
+    await ensureScheme('wubi86')
+    const all = await loadAllChars('wubi86')
+    const one = Object.entries(all).filter(([, e]) => e.short.some((s) => s.length === 1))
+    expect(one).toHaveLength(25)
+    for (const [key, ch] of Object.entries(SHORT1)) {
+      expect(all[ch].short.find((s) => s.length === 1), ch).toBe(key)
+    }
+  })
+
+  it('二级简码恰为官方 606 位置（25×25 − 3 空位 − 16 词组位）', async () => {
+    await ensureScheme('wubi86')
+    const all = await loadAllChars('wubi86')
+    const two = Object.entries(all).filter(([, e]) => e.short.some((s) => s.length === 2))
+    expect(two).toHaveLength(606)
+    // 7 个「三级简码字但两码+空格自动出现」特例的修正归属
+    expect(all['胩'].short).toContain('eh')
+    expect(all['噗'].short).toContain('ko')
+    expect(all['赕'].short).toContain('mo')
+    // 官方词组位 / 空位不得作为单字二级简码（rime 表曾混入单字条目）
+    for (const ch of ['齰', '咪', '嶙', '鼐', '蒌', '坳', '迥', '怵', '镪', '姝', '臾', '侬', '缥']) {
+      const e = all[ch]
+      if (e) expect(e.short.some((s) => s.length === 2), ch).toBe(false)
+    }
+  })
+})
 
 describe('buildLevelChars（真数据 wubi86）', () => {
   it('mix：按权重分配题数并合并洗牌', async () => {

@@ -64,6 +64,72 @@ const OUT_ROOT = resolve(ROOT, 'src/data/generated')
 const CJK = /[\u4e00-\u9fff]/
 const CODE = /^[a-z]{1,4}$/
 
+/**
+ * 86 版官方一级简码（25 字，86/98 相同）。
+ * 来源：王码官方一级简码表；rime 表头亦注明「Use original level 1 and 2 JianMa」。
+ */
+const SHORT1: Record<string, string> = {
+  g: '一', f: '地', d: '在', s: '要', a: '工',
+  h: '上', j: '是', k: '中', l: '国', m: '同',
+  t: '和', r: '的', e: '有', w: '人', q: '我',
+  y: '主', u: '产', i: '不', o: '为', p: '这',
+  n: '民', b: '了', v: '发', c: '以', x: '经',
+}
+
+/**
+ * 86 版官方二级简码表（25×25，行=首码，列=A..Y 次码；★=二字词组位，╳=空格位）。
+ * 来源：王码官方二级简码表。共 606 个单字位（含 7 个「三级简码字但两码+空格自动出现」特例：
+ * CU骈 EH胩 EO膦 KO噗 LA轼 MO赕 VH叟）。
+ */
+const SHORT2_ROWS = [
+  'G 开屯到天表于五下不理事画现与来★列珠末玫平妻珍互玉',
+  'F 载地支城圾寺二直示进吉协南志赤过无垢霜才增雪夫★坟',
+  'D 左顾友大胡夺三丰砂百右历面成灰达克原厅帮磁肆春龙太',
+  'S 械李权枯极村本相档查可楞机杨杰棕构析林格样要检楷术',
+  'A 式节芭基菜革七牙东划或功贡世★芝区匠苛攻燕切共药芳',
+  'H 虎╳皮睚肯睦睛止步旧占卤贞卢眯瞎餐睥盯睡瞳眼具此眩',
+  'J 虹最紧晨明时量早晃昌蝇曙遇电显晕晚蝗果昨暗归蛤昆景',
+  'K 呀啊吧顺吸叶呈中吵虽吕另员叫噗喧史听呆呼啼哪只哟嘛',
+  'L 轼囝轻因胃轩车四★辊加男轴思辚边罗斩困力较轨办累罚',
+  'M 曲邮凤央骨财同由峭则★崭册岂赕迪风贩朵几赠╳内嶷凡',
+  'T 长季么知秀行生处秒得各务向秘秋管称物条笔科委答第入',
+  'R 找报反拓扔持后年朱提扣押抽所搂近换折打手拉扫失批扩',
+  'E 肛服肥须朋肝且胩膛胆肿肋肌甩膦爱胸遥采用胶妥脸脂及',
+  'W 代他公估仍会全个偿介保佃仙亿伙★你伯休作们分从化信',
+  'Q 氏凶色然角针钱外乐旬名甸负包炙锭多铁钉儿匀争欠★久',
+  'Y 度离充庆衣计主让就刘训为高记变这义诉订放说良认率方',
+  'U 并闻冯关前半闰站冰间部曾商决普帝交瓣亲产立妆闪北六',
+  'I 江池汉尖肖法汪小水浊澡渐没沁淡学光泊洒少洋当兴涨注',
+  'O 煤籽烃类粗灶业粘炒烛炽烟灿断炎迷炮煌灯烽料娄粉糨米',
+  'P 宽字★害家守定寂宵审宫军宙官灾之宛宾宁客实安空它社',
+  'N 民敢怪居★导怀收悄慢避惭届忆屡忱懈怕★必习恨愉尼心',
+  'B 陈子取承阴际卫耻孙阳职阵出也耿辽隐孤阿降联限队陛防',
+  'V 毁好妈姑奶寻姨叟录旭如舅妯刀灵巡婚★杂九嫌妇★姆妨',
+  'C 戏邓双参能对骊★★骒台劝观马╳驼允牟骠矣骈艰难★驻',
+  'X 红弛经顷级结线引纱旨强细纲纪继综约绵★张弱绿给比纺',
+]
+
+const SHORT2_COLS = 'abcdefghijklmnopqrstuvwxy'
+
+/** 解析官方二级简码表 → code（首码+次码）→ 字 */
+function parseShort2(): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const row of SHORT2_ROWS) {
+    const m = /^([A-Y])\s(.+)$/.exec(row)
+    if (!m) throw new Error(`二级简码表行格式错误：${row}`)
+    const first = m[1].toLowerCase()
+    const rest = m[2]
+    if (rest.length !== 25) throw new Error(`二级简码表行长度错误（${rest.length}）：${row}`)
+    for (let i = 0; i < 25; i += 1) {
+      const ch = rest[i]
+      if (ch === '★' || ch === '╳') continue
+      map.set(first + SHORT2_COLS[i], ch)
+    }
+  }
+  if (map.size !== 606) throw new Error(`二级简码表应有 606 个单字位，实际 ${map.size}`)
+  return map
+}
+
 /** 解析 RIME 码表，返回 字 → (编码 → 权重) */
 function parseDict(dictFile: string): Map<string, Map<string, number>> {
   const text = readFileSync(resolve(SOURCES, dictFile), 'utf8')
@@ -197,6 +263,16 @@ function buildChars(scheme: Scheme): void {
   const level1 = parseLevel1()
   const rootsMap = scheme === 'wubi86' ? parseRootsMap() : new Map<string, string>()
 
+  // 官方一/二级简码反查表（86 用官方二级表；一级两方案相同）
+  const short1ByChar = new Map<string, string>()
+  for (const [c, ch] of Object.entries(SHORT1)) short1ByChar.set(ch, c)
+  const short2ByChar = new Map<string, string>()
+  if (scheme === 'wubi86') {
+    for (const [c, ch] of parseShort2()) {
+      if (!short2ByChar.has(ch)) short2ByChar.set(ch, c)
+    }
+  }
+
   // 编码 → 首选字（权重最高者）：简码只归属首选字，避免重码字误占简码
   // （98 码表中键名字也带单字母编码，如「王」有 g，须让位给权重更高的「一」）
   const primary = new Map<string, { ch: string; weight: number }>()
@@ -218,12 +294,24 @@ function buildChars(scheme: Scheme): void {
     if (!code) continue
 
     const short: string[] = []
-    if (codes) {
+    if (scheme === 'wubi86') {
+      // 86：一级/二级以官方简码表为准（rime 表混入的词组位/空位单字条目不可作二级简码）；
+      // 三级沿用码表登记的三级简码条目（全码 4 码且该 3 码条目归属本字）
+      const c1 = short1ByChar.get(ch)
+      if (c1 && code.length > 1) short.push(c1)
+      const c2 = short2ByChar.get(ch)
+      if (c2 && code.length > 2) short.push(c2)
+      if (code.length > 3 && codes) {
+        const third = code.slice(0, 3)
+        if (codes.has(third) && primary.get(third)?.ch === ch) short.push(third)
+      }
+    } else if (codes) {
+      // 98：沿用专业超集码表的条目归属（一级简码结果与官方 25 字一致）
       for (const c of codes.keys()) {
         if (c.length < code.length && primary.get(c)?.ch === ch) short.push(c)
       }
-      short.sort((a, b) => a.length - b.length || a.localeCompare(b))
     }
+    short.sort((a, b) => a.length - b.length || a.localeCompare(b))
 
     const radicals: [string, string][] = []
     if (d) {
