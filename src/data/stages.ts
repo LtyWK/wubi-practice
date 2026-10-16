@@ -101,13 +101,15 @@ const ZHE = ['n', 'b', 'v', 'c', 'x']
 const ALL_KEYS = [...HENG, ...SHU, ...PIE, ...NA, ...ZHE]
 
 /**
- * V2 关卡体系：6 阶段 / 37 小关。
+ * V2 关卡体系：6 阶段 / 42 小关。
  *
  * 训练量设计依据（单次练习约 3–6 分钟，达到有效肌肉记忆时长）：
  * - 字根关：单区 200 题（每键约 40 次）；全键位综合 300 题（每键约 12 次）
  * - 常用字根强化：300 题，按一级常用字中字根的使用频率加权，高频字根更多出现
  * - 简码关：100 题；口诀关按训练脚本分组出题（全文熟悉 → 逐句 drill 每字 10 遍 → 全文强化）
  * - 全码训练（s2-short1-full）：250 题 = 每字连打 5 遍（前 125）+ 均匀随机（后 125），每局随机字序，强制全码
+ * - 二级简码五区关 + 综合三关：题量 = 池大小（各取 86/98 较大值），一轮即可覆盖整个池
+ * - S2 通关速度门槛整体控制在 20–35 字/分（新手友好，随关卡推进递增）
  * - 常用字/识别码关：100–150 题
  * - 文章关：整篇连续输入（length 为字数参考，实际按篇目字数）
  * - 教学关（intro）：纯阅读，阅读完毕即达标
@@ -146,7 +148,7 @@ export const STAGES: StageConfig[] = [
         '民 了 发 以 经　｜　N B V C X',
         '提示：词组输入时，每个字只取前 2 码。所以即便会用简码上屏，也要记住这些字的前 2 码——后面「一级简码·全码训练」会反复练习完整编码，为词组输入打好基础。',
       ]),
-      danzi('s2-short1-a', '一级简码·口诀上半段', undefined, undefined, 190, 5000, 35, 0.85, {
+      danzi('s2-short1-a', '一级简码·口诀上半段', undefined, undefined, 190, 5000, 25, 0.85, {
         script: [
           '[口诀]',
           '一 地 在 要 工， 上 是 中 国 同。',
@@ -178,7 +180,7 @@ export const STAGES: StageConfig[] = [
         ],
         showShort1: true,
       }),
-      danzi('s2-short1-b', '一级简码·口诀下半段', undefined, undefined, 285, 5000, 35, 0.85, {
+      danzi('s2-short1-b', '一级简码·口诀下半段', undefined, undefined, 285, 5000, 25, 0.85, {
         script: [
           '[口诀]',
           '和 的 有 人 我， 主 产 不 为 这， 民 了 发 以 经。',
@@ -219,26 +221,43 @@ export const STAGES: StageConfig[] = [
         ],
         showShort1: true,
       }),
-      danzi('s2-short1-full', '一级简码·全码训练', 'short1', undefined, 250, 5000, 30, 0.9, {
+      danzi('s2-short1-full', '一级简码·全码训练', 'short1', undefined, 250, 5000, 20, 0.9, {
         // 前 125 题：每字连打 5 遍（每字一行）；后 125 题：25 字均匀随机
         pattern: 'drill',
         drillRepeat: 5,
         drillShuffle: true,
         requireFull: true,
       }),
-      danzi('s2-short1-mix', '一级简码混合', 'short1', undefined, 200, 5000, 40, 0.85, {
+      danzi('s2-short1-mix', '一级简码混合', 'short1', undefined, 200, 5000, 30, 0.85, {
         showShort1: true,
       }),
-      danzi('s2-short2-a', '二级简码·首码横竖区', 'short2', HENG.concat(SHU), 100, 6000, 40, 0.85, {
+      // 二级简码·五区：题量 = 两方案池较大值，一轮即可覆盖全区
+      danzi('s2-short2-heng', '二级简码·横区（G F D S A）', 'short2', HENG, 125, 6000, 25, 0.85, {
         showShorts: true,
       }),
-      danzi('s2-short2-b', '二级简码·首码撇捺折区', 'short2', [...PIE, ...NA, ...ZHE], 100, 6000, 40, 0.85, {
+      danzi('s2-short2-shu', '二级简码·竖区（H J K L M）', 'short2', SHU, 122, 6000, 25, 0.85, {
         showShorts: true,
       }),
-      danzi('s2-short2-mix', '二级简码·全键位混合', 'short2', undefined, 100, 5000, 45, 0.85, {
+      danzi('s2-short2-pie', '二级简码·撇区（T R E W Q）', 'short2', PIE, 125, 6000, 25, 0.85, {
         showShorts: true,
       }),
-      danzi('s2-short-all', '一二级简码综合', undefined, undefined, 150, 5000, 50, 0.85, {
+      danzi('s2-short2-na', '二级简码·捺区（Y U I O P）', 'short2', NA, 124, 6000, 25, 0.85, {
+        showShorts: true,
+      }),
+      danzi('s2-short2-zhe', '二级简码·折区（N B V C X）', 'short2', ZHE, 118, 6000, 25, 0.85, {
+        showShorts: true,
+      }),
+      // 二级简码·综合（全键位切三段）：题量 = 池大小，一轮覆盖全部二级简码字
+      danzi('s2-short2-mix-a', '二级简码·综合一（G–K）', 'short2', ['g', 'f', 'd', 's', 'a', 'h', 'j', 'k'], 199, 5000, 30, 0.85, {
+        showShorts: true,
+      }),
+      danzi('s2-short2-mix-b', '二级简码·综合二（L–Y）', 'short2', ['l', 'm', 't', 'r', 'e', 'w', 'q', 'y'], 198, 5000, 30, 0.85, {
+        showShorts: true,
+      }),
+      danzi('s2-short2-mix-c', '二级简码·综合三（U–X）', 'short2', ['u', 'i', 'o', 'p', 'n', 'b', 'v', 'c', 'x'], 216, 5000, 30, 0.85, {
+        showShorts: true,
+      }),
+      danzi('s2-short-all', '一二级简码综合', undefined, undefined, 150, 5000, 35, 0.85, {
         showShort1: true,
         showShorts: true,
         mix: [

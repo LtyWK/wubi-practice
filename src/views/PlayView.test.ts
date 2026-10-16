@@ -206,7 +206,7 @@ describe('PlayView 口诀脚本关', () => {
   })
 
   it('二级简码关显示简码规则说明与当前字各级简码', async () => {
-    routeRef.params.id = 's2-short2-a'
+    routeRef.params.id = 's2-short2-heng'
     unlockStage('s2')
 
     const wrapper = mount(PlayView)

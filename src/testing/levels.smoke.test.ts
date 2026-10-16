@@ -90,6 +90,48 @@ describe('简码上屏冒烟：脚本关按最短简码 + 空格可依次上屏'
   }
 })
 
+describe('S2 二级简码池划分与全覆盖', () => {
+  const s2Stage = STAGES.find((s) => s.id === 's2')
+  const short2Levels = (s2Stage?.levels ?? []).filter((l) => l.source === 'short2')
+  const zoneLevels = short2Levels.filter(
+    (l) => l.id.startsWith('s2-short2-') && !l.id.includes('mix'),
+  )
+  const mixLevels = short2Levels.filter((l) => l.id.includes('mix'))
+
+  /** 全池（无首码过滤） */
+  const fullLevel = (): LevelConfig => ({ ...zoneLevels[0], starts: undefined })
+
+  for (const scheme of SCHEMES) {
+    it(`五区关池互斥且并集为全部二级简码 [${scheme}]`, async () => {
+      await ensureScheme(scheme)
+      expect(zoneLevels).toHaveLength(5)
+      const pools = await Promise.all(zoneLevels.map((l) => buildPool(l, scheme)))
+      const all = pools.flat()
+      expect(new Set(all).size).toBe(all.length)
+      const full = await buildPool(fullLevel(), scheme)
+      expect(new Set(all)).toEqual(new Set(full))
+    })
+
+    it(`综合三关池互斥且并集为全部二级简码 [${scheme}]`, async () => {
+      await ensureScheme(scheme)
+      expect(mixLevels).toHaveLength(3)
+      const pools = await Promise.all(mixLevels.map((l) => buildPool(l, scheme)))
+      const all = pools.flat()
+      expect(new Set(all).size).toBe(all.length)
+      const full = await buildPool(fullLevel(), scheme)
+      expect(new Set(all)).toEqual(new Set(full))
+    })
+
+    it(`各二级简码关题量不小于池大小（一轮全覆盖）[${scheme}]`, async () => {
+      await ensureScheme(scheme)
+      for (const l of short2Levels) {
+        const pool = await buildPool(l, scheme)
+        expect(l.length, l.id).toBeGreaterThanOrEqual(pool.length)
+      }
+    })
+  }
+})
+
 for (const scheme of SCHEMES) {
   describe(`关卡冒烟[${scheme}]：按正确编码可自动通关`, () => {
     for (const stage of STAGES) {
