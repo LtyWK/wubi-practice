@@ -8,7 +8,7 @@ import type { LevelConfig, StageConfig } from '@/types'
 const router = useRouter()
 const { stages, isStageUnlocked, isLevelPassed, levelResult, stageProgress, syncUnlocks } =
   useLevels()
-const { getTypingProgress, getEndlessBest } = useSave()
+const { getTypingProgress, getEndlessBest, unlockStage } = useSave()
 
 onMounted(() => {
   syncUnlocks()
@@ -34,10 +34,6 @@ function isTyping(level: LevelConfig): boolean {
   return level.type === 'typing'
 }
 
-/** 秒数展示：整数不带小数位，否则保留 1 位（如 10、7.5） */
-function secText(seconds: number): string {
-  return Number.isInteger(seconds) ? String(seconds) : seconds.toFixed(1)
-}
 
 /** climb 关卡进度：总组数、已通关组数、历史最佳组速度 */
 interface ClimbProgress {
@@ -56,12 +52,10 @@ function climbProgress(level: LevelConfig): ClimbProgress {
   return { total, done, best }
 }
 
-/** climb 达标要求：每组 N 字 ≤X 秒（由组大小与组速度换算） */
+/** climb 达标要求：每组 N 字，通关速度可在练习页内切换档位 */
 function climbReqText(level: LevelConfig): string {
   const size = level.typing?.groupSize ?? 10
-  const speed = level.typing?.groupSpeed ?? 60
-  const seconds = speed > 0 ? (size / speed) * 60 : 0
-  return `每组 ${size} 字 ≤${secText(seconds)} 秒`
+  return `每组 ${size} 字 · 通关速度 35/50/70 可选`
 }
 
 /** typing 关规则文案：climb 用组规则，挑战模式按 mode 生成简短标签 */
@@ -147,6 +141,13 @@ function go(level: LevelConfig): void {
   router.push(`/play/${level.id}`)
 }
 
+/** 手动解锁阶段：弹窗确认后解锁（不影响已有成绩与错题） */
+function onUnlockStage(stage: StageConfig): void {
+  if (isStageUnlocked(stage.id)) return
+  if (!window.confirm(`确定解锁「${stage.title}」？解锁后可直接练习其中的小关。`)) return
+  unlockStage(stage.id)
+}
+
 function stageClass(stage: StageConfig): Record<string, boolean> {
   return {
     'stage--locked': !isStageUnlocked(stage.id),
@@ -198,9 +199,21 @@ function tip(level: LevelConfig): string {
         <div class="stage__body">
           <header class="stage__head">
             <h2 class="stage__title">{{ stage.title }}</h2>
-            <span v-if="!isStageUnlocked(stage.id)" class="stage__lock">未解锁</span>
-            <span v-else class="stage__count">
-              {{ stageProgress(stage).passed }}/{{ stageProgress(stage).total }}
+            <span class="stage__right">
+              <template v-if="!isStageUnlocked(stage.id)">
+                <span class="stage__lock">未解锁</span>
+                <button
+                  type="button"
+                  class="stage__unlock"
+                  title="解锁本阶段"
+                  @click.stop="onUnlockStage(stage)"
+                >
+                  解锁
+                </button>
+              </template>
+              <span v-else class="stage__count">
+                {{ stageProgress(stage).passed }}/{{ stageProgress(stage).total }}
+              </span>
             </span>
           </header>
           <p class="stage__desc">{{ stage.description }}</p>
@@ -347,6 +360,29 @@ function tip(level: LevelConfig): string {
 .stage__lock {
   color: var(--color-text-muted);
   font-size: var(--font-sm);
+}
+
+.stage__right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* 很小的手动解锁按钮：点击弹窗确认后解锁本阶段 */
+.stage__unlock {
+  padding: 0 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--font-sm);
+  line-height: 1.7;
+  cursor: pointer;
+}
+
+.stage__unlock:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-weak);
 }
 
 .stage__desc {

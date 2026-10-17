@@ -9,7 +9,8 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({ push: routerMock.push }),
 }))
 
-const { resetAll, unlockStage, recordLevelResult, recordTypingGroup, recordEndlessBest } = useSave()
+const { resetAll, unlockStage, isStageUnlocked, recordLevelResult, recordTypingGroup, recordEndlessBest } =
+  useSave()
 
 beforeEach(() => {
   localStorage.clear()
@@ -27,7 +28,7 @@ describe('LevelSelectView 跳转分流', () => {
 
     const typingCard = cards.find((b) => b.text().includes('最常用 700 字'))
     expect(typingCard).toBeTruthy()
-    expect(typingCard!.text()).toContain('每组 10 字 ≤10 秒')
+    expect(typingCard!.text()).toContain('每组 10 字 · 通关速度 35/50/70 可选')
     await typingCard!.trigger('click')
     expect(routerMock.push).toHaveBeenLastCalledWith('/typing/s4-common-1')
 
@@ -36,6 +37,36 @@ describe('LevelSelectView 跳转分流', () => {
     expect(normalCard!.text()).toContain('≥ 30 键/分 · 90%')
     await normalCard!.trigger('click')
     expect(routerMock.push).toHaveBeenLastCalledWith('/play/s1-zigen-heng')
+  })
+})
+
+describe('LevelSelectView 阶段解锁按钮', () => {
+  it('未解锁阶段显示小解锁按钮：确认后解锁，取消则保持锁定', async () => {
+    unlockStage('s1')
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    const wrapper = mount(LevelSelectView)
+    const locked = wrapper.findAll('li.stage')[1]
+    expect(locked.classes()).toContain('stage--locked')
+    expect(locked.text()).toContain('未解锁')
+
+    const unlockBtn = locked.find('.stage__unlock')
+    expect(unlockBtn.exists()).toBe(true)
+
+    // 取消确认：保持锁定
+    await unlockBtn.trigger('click')
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('确定解锁'))
+    expect(isStageUnlocked('s2')).toBe(false)
+
+    // 确认解锁：阶段可用（按钮消失，显示进度计数）
+    confirmSpy.mockReturnValue(true)
+    await unlockBtn.trigger('click')
+    await wrapper.vm.$nextTick()
+    expect(isStageUnlocked('s2')).toBe(true)
+    const unlocked = wrapper.findAll('li.stage')[1]
+    expect(unlocked.classes()).not.toContain('stage--locked')
+    expect(unlocked.find('.stage__unlock').exists()).toBe(false)
+    expect(unlocked.find('.stage__count').exists()).toBe(true)
   })
 })
 
