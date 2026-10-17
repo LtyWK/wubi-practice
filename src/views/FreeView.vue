@@ -18,14 +18,14 @@ onMounted(async () => {
 
 function startArticle(article: Article): void {
   setFreeText(`《${article.title}》${article.author}`, article.paragraphs.join('\n'))
-  router.push('/play/free')
+  router.push('/typing/free')
 }
 
 function startCustom(): void {
   const text = customText.value.trim()
   if (!text) return
   setFreeText(customTitle.value.trim() || '自定义文本', text)
-  router.push('/play/free')
+  router.push('/typing/free')
 }
 </script>
 

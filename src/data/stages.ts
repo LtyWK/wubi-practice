@@ -1,4 +1,4 @@
-import type { LevelConfig, StageConfig } from '@/types'
+import type { LevelConfig, StageConfig, TypingConfig } from '@/types'
 
 function zigen(
   id: string,
@@ -72,24 +72,41 @@ function intro(id: string, title: string, paragraphs: string[]): LevelConfig {
   }
 }
 
-function article(
+/** 跟打器关卡的总量（展示用）：climb 取切片跨度，gauntlet 累加各段，其余按目标/预生成量 */
+function typingLength(cfg: TypingConfig): number {
+  if (cfg.mode === 'climb') {
+    // words3 / words4 不传 range，全量各 200；common3500 与 words2 按切片跨度
+    return cfg.range ? cfg.range[1] - cfg.range[0] : 200
+  }
+  if (cfg.mode === 'gauntlet') {
+    return (cfg.segments ?? []).reduce((sum, seg) => {
+      const span = seg.range ? seg.range[1] - seg.range[0] : 0
+      return sum + (seg.count ?? span)
+    }, 0)
+  }
+  return cfg.charTarget ?? cfg.poolSize ?? 0
+}
+
+/**
+ * 跟打器关卡：只判定提交的汉字，不显示编码/简码/键位提示。
+ * require 仅作地图展示的参考值，实际判定按 typing 配置执行。
+ */
+function typing(
   id: string,
   title: string,
-  articleIds: string[],
-  length: number,
-  timeoutMs: number,
-  speed: number,
-  accuracy = 0.88,
+  cfg: TypingConfig,
+  requireSpeed: number,
+  requireAccuracy: number,
 ): LevelConfig {
   return {
     id,
-    type: 'article',
+    type: 'typing',
     title,
     pool: [],
-    articleIds,
-    length,
-    timeoutMs,
-    require: { speed, accuracy },
+    length: typingLength(cfg),
+    timeoutMs: 0,
+    typing: cfg,
+    require: { speed: requireSpeed, accuracy: requireAccuracy },
   }
 }
 
@@ -101,7 +118,7 @@ const ZHE = ['n', 'b', 'v', 'c', 'x']
 const ALL_KEYS = [...HENG, ...SHU, ...PIE, ...NA, ...ZHE]
 
 /**
- * V2 关卡体系：6 阶段 / 38 小关。
+ * V3 关卡体系：6 阶段 / 39 小关。
  *
  * 训练量设计依据（单次练习约 3–6 分钟，达到有效肌肉记忆时长）：
  * - 字根关：单区 200 题（每键约 40 次）；全键位综合 300 题（每键约 12 次）
@@ -110,8 +127,9 @@ const ALL_KEYS = [...HENG, ...SHU, ...PIE, ...NA, ...ZHE]
  * - 全码训练（s2-short1-full）：250 题 = 每字连打 5 遍（前 125）+ 均匀随机（后 125），每局随机字序，强制全码
  * - 二级简码五区关：题量 = 池大小（各取 86/98 较大值），一轮即可覆盖整个池
  * - S2 通关速度门槛整体控制在 20–30 字/分（新手友好，随关卡推进递增）
- * - 常用字/识别码关：100–150 题
- * - 文章关：整篇连续输入（length 为字数参考，实际按篇目字数）
+ * - S3 识别码关：全码基础各 100 题；识别码分型按 86/98 池较大值定题量（250/210/170），随机取样即可
+ * - S4/S5 爬坡关：10 字（词）一组、组达标 60 字/分，逐组推进并保存进度
+ * - S6 挑战关：限时冲刺 / 逐段提速 / 耐力 / 无尽 / 公文 / 混合段落
  * - 教学关（intro）：纯阅读，阅读完毕即达标
  *
  * 阶段内小关顺序自由；阶段内全部达标后解锁下一阶段。
@@ -251,70 +269,212 @@ export const STAGES: StageConfig[] = [
   },
   {
     id: 's3',
-    title: '常用字攻坚',
-    description: '拆字与识别码专项，攻克全码输入',
+    title: '识别码专题',
+    description: '全码基础与末笔识别码专项训练',
     levels: [
       intro('s3-intro', '识别码原理', [
         '当一个字拆出的字根不足 4 个时，五笔需要补一个「末笔字型交叉识别码」，使编码唯一。',
         '识别码由字的「末笔画」与「字型」共同决定：',
         '字型：左右型（1）、上下型（2）、杂合型（3）。',
+        '字型判别：左右型可左右分开，如「亿」（亻 + 乙）；上下型可上下分开，如「字」（宀 + 子）；杂合型为整体或内外结构，如「丙」。',
         '末笔：横（1）、竖（2）、撇（3）、捺（4）、折（5）。',
         '键位规律——末笔决定区，字型决定区内位置：',
         '横区 G F D ｜ 竖区 H J K ｜ 撇区 T R E ｜ 捺区 Y U I ｜ 折区 N B V（依次为左右、上下、杂合）',
         '例：「沐」= 氵 + 木（2 个字根）+ 末笔捺(4) + 左右型(1) → 识别码 Y → 全码 ISY。',
-        '本阶段先练三字根全码字，再专攻双字根字的识别码，最后综合常用字。',
+        '本阶段先练三字根、四字根全码字，再按左右、上下、杂合三种字型专攻识别码，最后综合训练。',
       ]),
       danzi('s3-full-3roots', '全码基础·三字根', 'freq1', undefined, 100, 6000, 40, 0.85, {
         rootCount: 3,
       }),
-      danzi('s3-idcode-left-up', '识别码·左右/上下型', 'idcode', undefined, 150, 6000, 30, 0.85, {
-        rootCount: 2,
-        shape: [1, 2],
-      }),
-      danzi('s3-idcode-mix', '识别码·杂合型', 'idcode', undefined, 100, 6000, 30, 0.85, {
-        rootCount: 2,
-        shape: [3],
-      }),
       danzi('s3-full-4roots', '全码基础·四字根', 'freq1', undefined, 100, 6000, 40, 0.85, {
         rootCount: 4,
       }),
-      danzi('s3-freq1-a', '常用字·横竖区', 'freq1', HENG.concat(SHU), 100, 6000, 50),
-      danzi('s3-freq1-b', '常用字·撇捺折区', 'freq1', [...PIE, ...NA, ...ZHE], 100, 6000, 50),
-      danzi('s3-freq1-mix', '常用字·全码综合', 'freq1', undefined, 150, 5000, 50),
+      // 识别码分型：题量按 86/98 两方案池较大值设定，随机取样即可
+      danzi('s3-idcode-1', '识别码·左右型', 'idcode', undefined, 250, 6000, 30, 0.85, {
+        rootCount: 2,
+        shape: [1],
+      }),
+      danzi('s3-idcode-2', '识别码·上下型', 'idcode', undefined, 210, 6000, 30, 0.85, {
+        rootCount: 2,
+        shape: [2],
+      }),
+      danzi('s3-idcode-3', '识别码·杂合型', 'idcode', undefined, 170, 6000, 30, 0.85, {
+        rootCount: 2,
+        shape: [3],
+      }),
+      danzi('s3-idcode-mix', '识别码·综合', 'idcode', undefined, 200, 6000, 35, 0.85, {
+        rootCount: 2,
+      }),
     ],
   },
   {
     id: 's4',
-    title: '文章实战',
-    description: '在诗文中连续输入，追求流畅',
+    title: '常用字爬坡',
+    description: '3500 常用字，十连一组，每组 60 字/分过关',
     levels: [
-      article('s4-poem-5', '五言诗合集（10 首）', ['tangshi-5'], 260, 8000, 60, 0.9),
-      article('s4-poem-7', '七言诗合集（8 首）', ['tangshi-7'], 280, 8000, 60, 0.9),
-      article('s4-ci', '宋词合集（3 首）', ['songci'], 230, 8000, 60, 0.88),
-      article('s4-gu-wen', '古文合集（陋室铭 · 爱莲说）', ['guwen'], 205, 8000, 60, 0.88),
-      article('s4-essay', '现代文合集（春 · 匆匆）', ['xiandai'], 300, 8000, 70, 0.85),
+      typing(
+        's4-common-1',
+        '最常用 700 字',
+        { mode: 'climb', source: 'common3500', range: [0, 700], groupSize: 10, groupSpeed: 60 },
+        60,
+        0,
+      ),
+      typing(
+        's4-common-2',
+        '常用 700 字·二',
+        { mode: 'climb', source: 'common3500', range: [700, 1400], groupSize: 10, groupSpeed: 60 },
+        60,
+        0,
+      ),
+      typing(
+        's4-common-3',
+        '常用 700 字·三',
+        {
+          mode: 'climb',
+          source: 'common3500',
+          range: [1400, 2100],
+          groupSize: 10,
+          groupSpeed: 60,
+        },
+        60,
+        0,
+      ),
+      typing(
+        's4-common-4',
+        '常用 700 字·四',
+        {
+          mode: 'climb',
+          source: 'common3500',
+          range: [2100, 2800],
+          groupSize: 10,
+          groupSpeed: 60,
+        },
+        60,
+        0,
+      ),
+      typing(
+        's4-common-5',
+        '常用 700 字·五',
+        {
+          mode: 'climb',
+          source: 'common3500',
+          range: [2800, 3500],
+          groupSize: 10,
+          groupSpeed: 60,
+        },
+        60,
+        0,
+      ),
     ],
   },
   {
     id: 's5',
-    title: '综合挑战',
-    description: '限时与低容错的终极考验',
+    title: '词组爬坡',
+    description: '常用词组十连一组，速度与手感双修',
     levels: [
-      zigen('s5-challenge-zigen', '字根极速', ALL_KEYS, 200, 2500, 60, 0.92),
-      danzi('s5-challenge-short', '简码极速', 'short2', undefined, 200, 4000, 60, 0.92),
-      danzi('s5-challenge-freq', '常用字长跑', 'freq1', undefined, 200, 5000, 60, 0.9),
-      article('s5-challenge-article', '文章耐力·岳阳楼记全文', ['yueyanglou'], 360, 7000, 70, 0.9),
-      danzi('s5-final', '毕业测试·常用字', 'freq1', undefined, 200, 4500, 60, 0.92),
+      typing(
+        's5-words2-a',
+        '常用二字词·上',
+        { mode: 'climb', source: 'words2', range: [0, 500], groupSize: 10, groupSpeed: 60 },
+        60,
+        0,
+      ),
+      typing(
+        's5-words2-b',
+        '常用二字词·下',
+        { mode: 'climb', source: 'words2', range: [500, 1000], groupSize: 10, groupSpeed: 60 },
+        60,
+        0,
+      ),
+      typing(
+        's5-words3',
+        '常用三字词',
+        { mode: 'climb', source: 'words3', groupSize: 10, groupSpeed: 60 },
+        60,
+        0,
+      ),
+      typing(
+        's5-words4',
+        '常用四字词',
+        { mode: 'climb', source: 'words4', groupSize: 10, groupSpeed: 60 },
+        60,
+        0,
+      ),
     ],
   },
   {
     id: 's6',
-    title: '终极挑战',
-    description: '以政府公文长文冲击极限速度',
+    title: '挑战关卡',
+    description: '限时冲刺 · 逐段提速 · 耐力 · 无尽 · 终极公文 · 毕业综合',
     levels: [
-      article('s6-policy-500', '公文长跑·500 字', ['zfgzbg-2024'], 500, 8000, 90, 0.9),
-      article('s6-policy-800', '公文长跑·800 字', ['zfgzbg-2025'], 800, 8000, 100, 0.9),
-      article('s6-policy-1000', '公文长跑·1000 字', ['zfgzbg-2025-task'], 1000, 8000, 120, 0.9),
+      typing(
+        's6-sprint-poem',
+        '诗词限时冲刺',
+        {
+          mode: 'sprint',
+          source: 'article',
+          articleIds: ['tangshi-5', 'tangshi-7'],
+          durationSec: 180,
+          charTarget: 180,
+          poolSize: 2000,
+        },
+        60,
+        0.9,
+      ),
+      typing(
+        's6-speedup-classic',
+        '古韵逐段提速',
+        {
+          mode: 'speedup',
+          source: 'article',
+          articleIds: ['songci', 'guwen', 'yueyanglou'],
+          speedup: [50, 60, 70],
+        },
+        60,
+        0.9,
+      ),
+      typing(
+        's6-marathon-essay',
+        '现代文耐力长跑',
+        { mode: 'marathon', source: 'article', articleIds: ['xiandai'] },
+        70,
+        0.95,
+      ),
+      typing(
+        's6-endless',
+        '无尽词流',
+        {
+          mode: 'endless',
+          source: 'words-mix',
+          poolSize: 3000,
+          charTarget: 500,
+          errorLimit: 10,
+        },
+        0,
+        0,
+      ),
+      typing(
+        's6-final-policy',
+        '公文终极挑战',
+        { mode: 'marathon', source: 'article', articleIds: ['zfgzbg-2025-task'] },
+        100,
+        0.98,
+      ),
+      typing(
+        's6-gauntlet',
+        '毕业综合测试',
+        {
+          mode: 'gauntlet',
+          source: 'common3500',
+          segments: [
+            { source: 'common3500', range: [0, 100], speed: 60 },
+            { source: 'words2', range: [0, 50], speed: 60 },
+            { source: 'article', articleIds: ['tangshi-5'], count: 100, speed: 60 },
+          ],
+        },
+        60,
+        0.9,
+      ),
     ],
   },
 ]

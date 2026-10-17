@@ -2,11 +2,13 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLevels } from '@/composables/useLevels'
+import { useSave } from '@/composables/useSave'
 import type { LevelConfig, StageConfig } from '@/types'
 
 const router = useRouter()
 const { stages, isStageUnlocked, isLevelPassed, levelResult, stageProgress, syncUnlocks } =
   useLevels()
+const { getTypingProgress, getEndlessBest } = useSave()
 
 onMounted(() => {
   syncUnlocks()
@@ -27,19 +29,121 @@ function isIntro(level: LevelConfig): boolean {
   return level.type === 'intro'
 }
 
+/** 是否为跟打器关卡（S4/S5/S6） */
+function isTyping(level: LevelConfig): boolean {
+  return level.type === 'typing'
+}
+
+/** 秒数展示：整数不带小数位，否则保留 1 位（如 10、7.5） */
+function secText(seconds: number): string {
+  return Number.isInteger(seconds) ? String(seconds) : seconds.toFixed(1)
+}
+
+/** climb 关卡进度：总组数、已通关组数、历史最佳组速度 */
+interface ClimbProgress {
+  total: number
+  done: number
+  best: number
+}
+
+function climbProgress(level: LevelConfig): ClimbProgress {
+  const size = level.typing?.groupSize ?? 10
+  const total = Math.max(1, Math.ceil(level.length / size))
+  const progress = getTypingProgress(level.id)
+  const done = Math.min(progress?.groupIndex ?? 0, total)
+  const bests = progress?.groupBests ?? []
+  const best = bests.reduce((max, v) => (v > max ? v : max), 0)
+  return { total, done, best }
+}
+
+/** climb 达标要求：每组 N 字 ≤X 秒（由组大小与组速度换算） */
+function climbReqText(level: LevelConfig): string {
+  const size = level.typing?.groupSize ?? 10
+  const speed = level.typing?.groupSpeed ?? 60
+  const seconds = speed > 0 ? (size / speed) * 60 : 0
+  return `每组 ${size} 字 ≤${secText(seconds)} 秒`
+}
+
+/** typing 关规则文案：climb 用组规则，挑战模式按 mode 生成简短标签 */
+function typingRuleText(level: LevelConfig): string {
+  const cfg = level.typing
+  if (!cfg) return ''
+  switch (cfg.mode) {
+    case 'climb':
+      return climbReqText(level)
+    case 'sprint': {
+      const parts = ['限时冲刺']
+      if (cfg.durationSec) parts.push(`限时 ${Math.max(1, Math.round(cfg.durationSec / 60))} 分钟`)
+      if (cfg.charTarget) parts.push(`达标 ≥${cfg.charTarget} 字`)
+      return parts.join(' · ')
+    }
+    case 'speedup': {
+      const speeds = cfg.speedup ?? []
+      return speeds.length > 0 ? `逐段提速 ${speeds.join('→')} 字/分` : '逐段提速'
+    }
+    case 'marathon':
+      return `≥${level.require.speed} 字/分 · 正确率 ≥${pct(level.require.accuracy)}`
+    case 'endless': {
+      const parts = ['无尽词流']
+      if (cfg.charTarget) parts.push(`单局 ≥${cfg.charTarget} 字`)
+      if (cfg.errorLimit) parts.push(`错 ${cfg.errorLimit} 次结束`)
+      return parts.join(' · ')
+    }
+    case 'gauntlet': {
+      const count = cfg.segments?.length ?? 0
+      return count > 0 ? `${count} 段综合测试` : '综合测试'
+    }
+  }
+}
+
+/** typing 关状态文案：climb 组进度与最佳组速度、无尽纪录、其余最佳成绩 */
+function typingStatusText(level: LevelConfig): string {
+  const cfg = level.typing
+  if (cfg?.mode === 'climb') {
+    const { total, done, best } = climbProgress(level)
+    const bestPart = best > 0 ? `最佳 ${best.toFixed(0)} 字/分` : '未开始'
+    return `进度 ${done}/${total} 组 · ${bestPart}`
+  }
+  if (cfg?.mode === 'endless') {
+    const best = getEndlessBest()
+    return best > 0 ? `纪录 ${best} 字` : '未开始'
+  }
+  const result = levelResult(level.id)
+  return result ? `最佳 ${result.bestSpeed.toFixed(0)} 字/分` : '未开始'
+}
+
+/** 段位徽章文字（仅 typing 关有成绩时展示） */
+function rankText(level: LevelConfig): string {
+  if (!isTyping(level)) return ''
+  return levelResult(level.id)?.rank ?? ''
+}
+
+/** 段位徽章样式类：S 金 / A 银 / B 铜 / C 灰 */
+function rankClass(level: LevelConfig): string {
+  const rank = rankText(level)
+  return rank ? `rank rank--${rank.toLowerCase()}` : ''
+}
+
 function reqText(level: LevelConfig): string {
+  if (isTyping(level)) return typingRuleText(level)
   if (isIntro(level)) return '阅读完毕'
   return `≥ ${level.require.speed} ${unitOf(level)} · ${pct(level.require.accuracy)}`
 }
 
 function bestText(level: LevelConfig): string {
+  if (isTyping(level)) return typingStatusText(level)
   const best = levelResult(level.id)
   if (!best) return '尚无成绩'
   if (isIntro(level)) return '已阅读'
   return `最佳 ${best.bestSpeed.toFixed(0)} ${unitOf(level)}`
 }
 
+/** typing 关卡跳跟打器页面，其余沿用编码练习页面 */
 function go(level: LevelConfig): void {
+  if (isTyping(level)) {
+    router.push(`/typing/${level.id}`)
+    return
+  }
   router.push(`/play/${level.id}`)
 }
 
@@ -64,6 +168,11 @@ function badge(stage: StageConfig, level: LevelConfig): string {
 
 function tip(level: LevelConfig): string {
   const best = levelResult(level.id)
+  if (isTyping(level)) {
+    const lines = [level.title, typingRuleText(level), typingStatusText(level)]
+    if (best?.rank) lines.push(`段位：${best.rank}`)
+    return lines.join('\n')
+  }
   const req = isIntro(level)
     ? '阅读完毕'
     : `达标：≥ ${level.require.speed} ${unitOf(level)} · ${pct(level.require.accuracy)}`
@@ -115,9 +224,20 @@ function tip(level: LevelConfig): string {
                 <span class="card__body">
                   <span class="card__title">{{ level.title }}</span>
                   <span class="card__req">{{ reqText(level) }}</span>
+                  <progress
+                    v-if="isTyping(level) && level.typing?.mode === 'climb'"
+                    class="card__bar"
+                    :value="climbProgress(level).done"
+                    :max="climbProgress(level).total"
+                  ></progress>
                   <span class="card__best">{{ bestText(level) }}</span>
                 </span>
-                <span class="card__badge">{{ badge(stage, level) }}</span>
+                <span class="card__side">
+                  <span v-if="rankText(level)" :class="rankClass(level)">{{
+                    rankText(level)
+                  }}</span>
+                  <span class="card__badge">{{ badge(stage, level) }}</span>
+                </span>
               </button>
             </li>
           </ul>
@@ -348,6 +468,73 @@ progress.stage__bar::-moz-progress-bar {
 .card__best {
   font-size: var(--font-sm);
   color: var(--color-text-muted);
+}
+
+/* climb 关卡：组进度条 */
+.card__bar {
+  width: 100%;
+  height: 4px;
+  border: none;
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 2px 0;
+}
+
+progress.card__bar::-webkit-progress-bar {
+  background: var(--color-key-bg);
+  border-radius: 2px;
+}
+
+progress.card__bar::-webkit-progress-value {
+  background: var(--color-primary);
+  border-radius: 2px;
+}
+
+progress.card__bar::-moz-progress-bar {
+  background: var(--color-primary);
+  border-radius: 2px;
+}
+
+/* 卡片右侧：段位徽章 + 状态文字 */
+.card__side {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+/* 跟打器段位徽章：S 金 / A 银 / B 铜 / C 灰 */
+.rank {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.rank--s {
+  background: #d4a017;
+  color: #3d2f00;
+}
+
+.rank--a {
+  background: #aab4bf;
+  color: #1f2430;
+}
+
+.rank--b {
+  background: #9c6239;
+  color: #ffffff;
+}
+
+.rank--c {
+  background: var(--color-key-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
 }
 
 .card__badge {
