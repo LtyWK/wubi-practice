@@ -46,7 +46,7 @@ export interface LevelConfig {
   drillShuffle?: boolean
   /** 强制全码：禁用简码 + 空格上屏（全码训练关） */
   requireFull?: boolean
-  /** 多源按权重混合出题（与 source 互斥，用于一二级简码综合） */
+  /** 多源按权重混合出题（与 source 互斥） */
   mix?: { source: 'short1' | 'short2'; weight: number }[]
   /** 识别码字型过滤：1 左右 2 上下 3 杂合（source=idcode 时生效） */
   shape?: (1 | 2 | 3)[]

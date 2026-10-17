@@ -224,3 +224,51 @@ describe('PlayView 口诀脚本关', () => {
     expect(items.some((i) => i.text().includes('二级简码'))).toBe(true)
   })
 })
+
+describe('PlayView 随机字/字根网格布局', () => {
+  it('字根关：每行 20 个（两组各 10 个），无对齐按钮', async () => {
+    const wrapper = mount(PlayView)
+    await waitUntil(() => wrapper.findAll('.tp-char').length > 0)
+
+    expect(wrapper.find('.tp-grid').exists()).toBe(true)
+    expect(wrapper.find('.text-panel__text').exists()).toBe(false)
+    expect(wrapper.find('.align-btn').exists()).toBe(false)
+
+    // 200 题 / 每行 20 个 = 10 行，每行两组、每组 10 个
+    const rows = wrapper.findAll('.tp-grid__row')
+    expect(rows).toHaveLength(10)
+    for (const row of rows) {
+      const groups = row.findAll('.tp-grid__group')
+      expect(groups).toHaveLength(2)
+      expect(groups[0].findAll('.tp-char')).toHaveLength(10)
+      expect(groups[1].findAll('.tp-char')).toHaveLength(10)
+    }
+    expect(wrapper.findAll('.tp-char')).toHaveLength(200)
+  })
+
+  it('随机单字关使用网格布局，drill 关与脚本关保持字符流', async () => {
+    routeRef.params.id = 's2-short1-mix'
+    unlockStage('s2')
+
+    const mixWrapper = mount(PlayView)
+    await waitUntil(() => mixWrapper.findAll('.tp-char').length > 0)
+    expect(mixWrapper.find('.tp-grid').exists()).toBe(true)
+    mixWrapper.unmount()
+
+    routeRef.params.id = 's2-short1-full'
+    const drillWrapper = mount(PlayView)
+    await waitUntil(() => drillWrapper.find('.hint__code').exists())
+    expect(drillWrapper.find('.tp-grid').exists()).toBe(false)
+    expect(drillWrapper.find('.text-panel__text').exists()).toBe(true)
+    expect(drillWrapper.findAll('.text-panel__text br').length).toBeGreaterThan(0)
+    drillWrapper.unmount()
+
+    routeRef.params.id = 's2-short1-a'
+    const scriptWrapper = mount(PlayView)
+    await waitUntil(() => scriptWrapper.find('.tp-hint').exists())
+    expect(scriptWrapper.find('.tp-grid').exists()).toBe(false)
+    expect(scriptWrapper.find('.text-panel__text').exists()).toBe(true)
+    scriptWrapper.unmount()
+  })
+})
+

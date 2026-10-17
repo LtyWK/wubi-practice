@@ -312,6 +312,11 @@ const textItems = computed<PanelItem[]>(() => {
   return linearItems.value
 })
 
+/** 随机字/字根关（纯字符流，非脚本 / 文章 / drill）：使用每行 20 个的网格布局 */
+const gridLayout = computed(
+  () => !scriptMode.value && !articleMode.value && level.value?.pattern !== 'drill',
+)
+
 /** 标题：大关（阶段）· 小关 */
 const panelTitle = computed(() => {
   const lv = level.value
@@ -756,7 +761,11 @@ onUnmounted(() => {
       :unit="unit"
     />
 
-    <TextPanel :items="textItems" :title="panelTitle" />
+    <TextPanel
+      :items="textItems"
+      :title="panelTitle"
+      :layout="gridLayout ? 'grid' : 'flow'"
+    />
 
     <CodeHint
       v-if="currentHint"
