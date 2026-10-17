@@ -368,7 +368,21 @@ const groupIsReview = ref(false)
 
 const isClimb = computed(() => mode.value === 'climb')
 const groupSize = computed(() => config.value?.groupSize ?? 10)
-const groupSpeed = computed(() => config.value?.groupSpeed ?? 60)
+
+/** 爬坡通关速度档位（字/分）：默认取关卡配置档（无效值时用中间档），当前组判定按所选档实时生效 */
+const CLIMB_SPEEDS = [35, 50, 70]
+function initialClimbSpeed(): number {
+  const configured = config.value?.groupSpeed ?? 0
+  return CLIMB_SPEEDS.includes(configured) ? configured : CLIMB_SPEEDS[1]
+}
+const climbSpeed = ref(initialClimbSpeed())
+const groupSpeed = computed(() => climbSpeed.value)
+
+/** 切换通关速度档位并恢复输入焦点 */
+function setClimbSpeed(speed: number): void {
+  climbSpeed.value = speed
+  void nextTick(() => focusInput())
+}
 const climbGroups = computed<string[][]>(() => {
   const sorted =
     climbSeed.value === undefined
@@ -429,8 +443,7 @@ function completeClimbLevel(): void {
 function completeClimbGroup(): void {
   const index = currentGroup.value
   const stats = typingStats(session.value, session.value.finishedAt ?? Date.now())
-  const chars = session.value.target.length
-  const limitMs = (chars * 60000) / groupSpeed.value
+  const limitMs = (session.value.target.length * 60000) / groupSpeed.value
   const passed = stats.elapsedMs <= limitMs + 1e-6
 
   if (groupIsReview.value) {
@@ -446,14 +459,11 @@ function completeClimbGroup(): void {
   }
 
   if (!passed) {
-    // 不达标不写进度，仅展示本组成绩以便立即重打
-    showResult({
-      title: `第 ${index + 1} 组未达标`,
-      passed: false,
-      passLabel: `每组 ${chars} 字 ≤${(limitMs / 1000).toFixed(1)} 秒（${groupSpeed.value} 字/分）`,
-      record: makeRecord(),
-      retry: () => startGroup(index),
-    })
+    // 未达标：不打断训练（不出结算卡片），短暂提示后自动重来本组
+    showBanner(
+      `未达标 · ${stats.speed.toFixed(0)} 字/分（需 ≥${groupSpeed.value}）· 自动重来本组`,
+    )
+    scheduleAdvance(() => startGroup(index))
     return
   }
 
@@ -988,7 +998,7 @@ const modeInfo = computed(() => {
   switch (mode.value) {
     case 'climb':
       if (totalGroups.value === 0) return ''
-      return `第 ${Math.min(currentGroup.value + 1, totalGroups.value)}/${totalGroups.value} 组 · 每组 ${groupSize.value} ${climbSourceUnit.value} · 门槛 ≥${groupSpeed.value} 字/分`
+      return `第 ${Math.min(currentGroup.value + 1, totalGroups.value)}/${totalGroups.value} 组 · 每组 ${groupSize.value} ${climbSourceUnit.value}`
     case 'sprint':
       return `剩余 ${formatClock(sprintRemaining.value)} · 目标 ${goalChars.value} 字`
     case 'speedup':
@@ -1207,6 +1217,26 @@ onUnmounted(() => {
 
     <p v-if="ready && !resultVisible" class="typing__mode">{{ modeInfo }}</p>
 
+    <div v-if="ready && !resultVisible && isClimb" class="typing__climb-bar">
+      <span class="typing__climb-label">通关速度</span>
+      <span class="typing__climb-group">
+        <button
+          v-for="speed in CLIMB_SPEEDS"
+          :key="speed"
+          type="button"
+          class="speed-btn"
+          :class="{ 'speed-btn--active': climbSpeed === speed }"
+          @click.stop="setClimbSpeed(speed)"
+        >
+          {{ speed }}
+        </button>
+      </span>
+      <span class="typing__climb-unit">字/分</span>
+      <span class="typing__climb-tip">
+        速度达 {{ groupSpeed }} 字/分自动进入下一组，未达标自动重来
+      </span>
+    </div>
+
     <p v-if="!ready" class="typing__loading">加载中…</p>
 
     <template v-else-if="!resultVisible">
@@ -1379,6 +1409,51 @@ onUnmounted(() => {
   color: var(--color-text-muted);
   font-size: var(--font-sm);
   text-align: center;
+}
+
+/* 爬坡：通关速度档位与连续训练说明 */
+.typing__climb-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: calc(-1 * var(--space-1));
+  font-size: var(--font-sm);
+  color: var(--color-text-muted);
+}
+
+.typing__climb-group {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.speed-btn {
+  min-width: 44px;
+  padding: 2px 10px;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.speed-btn + .speed-btn {
+  border-left: 1px solid var(--color-border);
+}
+
+.speed-btn--active {
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.typing__climb-tip {
+  color: var(--color-text-muted);
+  opacity: 0.9;
 }
 
 .typing__loading {
