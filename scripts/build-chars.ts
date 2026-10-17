@@ -14,6 +14,7 @@
  *   - chars.freq1.json      一级（通用规范一级 3500）常用字
  * 输出（src/data/generated/）：
  *   - articles.json         文章库（方案共用）
+ *   - common3500.json       常用 3500 字（按字频降序，方案共用）
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -233,6 +234,43 @@ function parseLevel1(): Set<string> {
   return result
 }
 
+/**
+ * 生成常用 3500 字（按 freq 列降序，方案共用）。
+ *
+ * 简体列（第 4 列）与单字列仅「乾 → 干」一处不同，且「干」本身也在一级表中；
+ * 为保证与 chars.json 的 freq=1 集合完全一致，简体形式重复的行回退为原字。
+ */
+function buildCommon3500(): string[] {
+  const text = readFileSync(resolve(SOURCES, 'data-chars.tsv'), 'utf8')
+  const lines = text.split(/\r?\n/)
+  const rows: { ch: string; simple: string; freq: number; order: number }[] = []
+  const simpleCount = new Map<string, number>()
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split('\t')
+    if (cols.length < 13 || cols[5] !== '一级') continue
+    const ch = cols[1]
+    if (ch.length !== 1) continue
+    const simple = cols[3] || ch
+    simpleCount.set(simple, (simpleCount.get(simple) ?? 0) + 1)
+    rows.push({ ch, simple, freq: Number(cols[12]) || 0, order: i })
+  }
+
+  const seen = new Set<string>()
+  const chars: { ch: string; freq: number; order: number }[] = []
+  for (const row of rows) {
+    let ch = (simpleCount.get(row.simple) ?? 0) > 1 ? row.ch : row.simple
+    if (seen.has(ch)) ch = row.ch
+    if (seen.has(ch)) continue
+    seen.add(ch)
+    chars.push({ ch, freq: row.freq, order: row.order })
+  }
+  if (chars.length !== 3500) throw new Error(`常用 3500 字数量异常：${chars.length}`)
+
+  chars.sort((a, b) => b.freq - a.freq || a.order - b.order)
+  return chars.map((c) => c.ch)
+}
+
 /** 载入 86 PUA → 字根文本映射 */
 function parseRootsMap(): Map<string, string> {
   const raw = readFileSync(resolve(SOURCES, 'roots-map.json'), 'utf8')
@@ -349,6 +387,10 @@ function buildChars(scheme: Scheme): void {
     existsSync(articlesPath) ? readFileSync(articlesPath, 'utf8') : '[]',
     'utf8',
   )
+
+  // 常用 3500 字（方案共用；两方案重复写入相同内容）
+  const common3500 = buildCommon3500()
+  writeFileSync(resolve(OUT_ROOT, 'common3500.json'), JSON.stringify(common3500), 'utf8')
 
   const total = Object.keys(entries).length
   const f1 = Object.keys(freq1).length

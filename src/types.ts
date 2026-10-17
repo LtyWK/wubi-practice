@@ -19,7 +19,7 @@ export interface CharEntry {
 export interface LevelConfig {
   /** 如 "s1-zigen-heng" */
   id: string
-  type: 'zigen' | 'danzi' | 'article' | 'intro'
+  type: 'zigen' | 'danzi' | 'article' | 'intro' | 'typing'
   /** 如 "横区字根（G F D S A）" */
   title: string
   /** zigen：键位列表；danzi/article：忽略 */
@@ -63,8 +63,64 @@ export interface LevelConfig {
   showShort1?: boolean
   /** 在拆字面板显示简码规则说明与当前字全部层级简码（二级简码训练关用） */
   showShorts?: boolean
-  /** 达标要求（intro 关忽略） */
+  /** 跟打器关卡配置（type='typing' 时必填，实际判定按此配置执行） */
+  typing?: TypingConfig
+  /** 达标要求（intro 关忽略；typing 关填展示用参考值，判定见 typing 配置） */
   require: { speed: number; accuracy: number }
+}
+
+/** 跟打器训练模式 */
+export type TypingMode = 'climb' | 'sprint' | 'speedup' | 'marathon' | 'endless' | 'gauntlet'
+
+/** 跟打器内容来源（common3500/词组表为方案共用数据；article 为文章库） */
+export type TypingSource =
+  | 'common3500'
+  | 'words2'
+  | 'words3'
+  | 'words4'
+  | 'words-mix'
+  | 'article'
+
+/** 跟打器关卡配置（type='typing'） */
+export interface TypingConfig {
+  /** 模式：climb 爬坡 / sprint 限时冲刺 / speedup 逐段提速 / marathon 耐力 / endless 无尽 / gauntlet 混合段落 */
+  mode: TypingMode
+  /** 内容来源 */
+  source: TypingSource
+  /** article 源：篇目 id 列表（多篇按序串接） */
+  articleIds?: string[]
+  /** 数组源：切片范围 [start, end)（缺省为全量） */
+  range?: [number, number]
+  /** climb：每组字数（默认 10） */
+  groupSize?: number
+  /** climb：组达标速度（字/分，默认 60） */
+  groupSpeed?: number
+  /** sprint：限时（秒） */
+  durationSec?: number
+  /** sprint/endless：达标字数 */
+  charTarget?: number
+  /** speedup：逐段速度门槛（字/分，按段落顺序，缺省沿用末档） */
+  speedup?: number[]
+  /** endless：错误上限（达到即结束） */
+  errorLimit?: number
+  /** sprint/endless：预生成文本长度（字） */
+  poolSize?: number
+  /** gauntlet：段落定义（依次完成） */
+  segments?: TypingSegment[]
+}
+
+/** gauntlet 模式单段定义 */
+export interface TypingSegment {
+  /** 内容来源 */
+  source: TypingSource
+  /** article 源：篇目 id */
+  articleIds?: string[]
+  /** 数组源：切片范围 [start, end) */
+  range?: [number, number]
+  /** 字符数上限（article 源默认整篇） */
+  count?: number
+  /** 本段达标速度（字/分） */
+  speed: number
 }
 
 /** 阶段配置（大关卡） */
@@ -183,6 +239,9 @@ export interface CharStat {
   lastAt: number
 }
 
+/** 跟打器段位（历史最高） */
+export type LevelRank = 'S' | 'A' | 'B' | 'C'
+
 /** 关卡成绩（V2） */
 export interface LevelResult {
   /** 是否达标 */
@@ -195,6 +254,24 @@ export interface LevelResult {
   timeouts: number
   /** 最近一次时间戳 */
   at: number
+  /** 跟打器关卡段位（历史最高） */
+  rank?: LevelRank
+}
+
+/** 跟打器爬坡关卡进度（V3） */
+export interface TypingProgress {
+  /** 已通关组数（= 下一组索引） */
+  groupIndex: number
+  /** 随机排列种子（存在 = 本关使用随机序；缺省 = 默认字频序） */
+  shuffleSeed?: number
+  /** 每组最佳速度（字/分），下标 = 组序号 */
+  groupBests: number[]
+}
+
+/** 跟打器特殊模式纪录（V3） */
+export interface TypingRecords {
+  /** 无尽模式单局最高完成字数 */
+  endlessBestChars?: number
 }
 
 /** V2 存档结构（localStorage 单键存储） */
@@ -209,4 +286,18 @@ export interface SaveV2 {
   }
   mistakes: MistakeBook
   stats: Record<string, CharStat>
+  /** 跟打器爬坡进度（S4/S5，V3） */
+  typing?: Record<string, TypingProgress>
+  /** 跟打器特殊模式纪录（V3） */
+  records?: TypingRecords
+}
+
+/** 词组表（由 scripts/build-words.ts 生成，方案共用） */
+export interface WordsTable {
+  /** 常用二字词（权重降序） */
+  words2: string[]
+  /** 常用三字词（权重降序） */
+  words3: string[]
+  /** 常用四字词（权重降序） */
+  words4: string[]
 }

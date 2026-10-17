@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { WORD_BLACKLIST } from './build-words'
 
 type Scheme = 'wubi86' | 'wubi98'
 
@@ -47,6 +48,12 @@ interface LayoutConfig {
   layouts: Record<string, { size: number; cells: (LayoutCell | null)[] }>
 }
 
+interface WordsTable {
+  words2: string[]
+  words3: string[]
+  words4: string[]
+}
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const SOURCES = resolve(ROOT, 'scripts/sources')
 const KEY_ORDER = 'gfdsahjklmtrewqyuiopnbvcx'.split('')
@@ -72,6 +79,12 @@ function verify(scheme: Scheme): boolean {
   const zigen = readJson<ZigenItem[]>(resolve(ROOT, `src/data/generated/${scheme}/zigen.json`))
   const cfg = readJson<ZigenConfig>(resolve(SOURCES, `zigen-${suffix}.json`))
   const layout = readJson<LayoutConfig>(resolve(SOURCES, `layout-${suffix}.json`))
+  const common3500 = readJson<string[]>(resolve(ROOT, 'src/data/generated/common3500.json'))
+  const words = readJson<WordsTable>(resolve(ROOT, 'src/data/generated/words.json'))
+  const wubi86 =
+    scheme === 'wubi86'
+      ? chars
+      : readJson<Record<string, CharEntry>>(resolve(ROOT, 'src/data/generated/wubi86/chars.json'))
 
   const total = Object.keys(chars).length
   const freq1 = Object.values(chars).filter((e) => e.freq === 1).length
@@ -128,6 +141,45 @@ function verify(scheme: Scheme): boolean {
     }
   }
 
+  // ④ 常用 3500 字完整性 + 与 wubi86 freq=1 集合一致
+  const commonIssues: string[] = []
+  if (common3500.length !== 3500) commonIssues.push(`长度 ${common3500.length}（要求 3500）`)
+  if (new Set(common3500).size !== common3500.length) commonIssues.push('存在重复字')
+  const commonSet = new Set(common3500)
+  const notInChars = [...commonSet].filter((ch) => !(ch in wubi86))
+  if (notInChars.length) {
+    commonIssues.push(`不在 wubi86 chars.json：${notInChars.slice(0, 10).join('')}`)
+  }
+  const freq1Set = new Set(Object.keys(wubi86).filter((ch) => wubi86[ch].freq === 1))
+  const missingFreq1 = [...freq1Set].filter((ch) => !commonSet.has(ch))
+  const extraFreq1 = [...commonSet].filter((ch) => !freq1Set.has(ch))
+  if (missingFreq1.length || extraFreq1.length) {
+    commonIssues.push(
+      `与 freq=1 集合不一致（缺 ${missingFreq1.slice(0, 10).join('') || '无'}，` +
+        `多 ${extraFreq1.slice(0, 10).join('') || '无'}）`,
+    )
+  }
+
+  // ⑤ 词组表：数量 / 纯汉字 / 去重 / 黑名单
+  const wordIssues: string[] = []
+  const EXPECT: { key: keyof WordsTable; count: number }[] = [
+    { key: 'words2', count: 1000 },
+    { key: 'words3', count: 200 },
+    { key: 'words4', count: 200 },
+  ]
+  for (const { key, count } of EXPECT) {
+    const list = words[key]
+    if (list.length !== count) wordIssues.push(`${key} 长度 ${list.length}（要求 ${count}）`)
+    const bad = list.filter((w) => !/^[\u4e00-\u9fff]+$/.test(w))
+    if (bad.length) wordIssues.push(`${key} 含非纯汉字：${bad.slice(0, 5).join(' ')}`)
+    const dup = list.length - new Set(list).size
+    if (dup > 0) wordIssues.push(`${key} 重复 ${dup} 个`)
+  }
+  const hits = [...new Set([...words.words2, ...words.words3, ...words.words4])].filter((w) =>
+    WORD_BLACKLIST.includes(w),
+  )
+  if (hits.length) wordIssues.push(`命中黑名单：${hits.join(' ')}`)
+
   console.log(`=== ${scheme} 数据校验 ===`)
   console.log(`单字条目：${total}（要求 ≥ 7000）`)
   console.log(`一级常用字：${freq1}（要求 = 3500）`)
@@ -136,6 +188,12 @@ function verify(scheme: Scheme): boolean {
   console.log(`② 一级简码 25 字：${level1Ok ? '通过' : '不一致'}`)
   if (!level1Ok) console.log('   实际：', JSON.stringify(found))
   console.log(`③ 字根表完整性/一致性：${zigenIssues.length === 0 ? '通过' : `异常（${zigenIssues.join('; ')}）`}`)
+  console.log(
+    `④ 常用 3500 字：${commonIssues.length === 0 ? '通过' : `异常（${commonIssues.join('; ')}）`}`,
+  )
+  console.log(
+    `⑤ 词组表：${wordIssues.length === 0 ? '通过' : `异常（${wordIssues.join('; ')}）`}`,
+  )
 
   // ④ 抽样
   const freq1Chars = Object.keys(chars).filter((ch) => chars[ch].freq === 1)
@@ -151,7 +209,14 @@ function verify(scheme: Scheme): boolean {
       .join('  |  '),
   )
 
-  const ok = total >= 7000 && freq1 === 3500 && failPrefix === 0 && level1Ok && zigenIssues.length === 0
+  const ok =
+    total >= 7000 &&
+    freq1 === 3500 &&
+    failPrefix === 0 &&
+    level1Ok &&
+    zigenIssues.length === 0 &&
+    commonIssues.length === 0 &&
+    wordIssues.length === 0
   return ok
 }
 

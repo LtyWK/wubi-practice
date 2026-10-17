@@ -1,4 +1,11 @@
-import type { Article, CharEntry, RadicalWeight, WubiScheme, ZigenItem } from '@/types'
+import type {
+  Article,
+  CharEntry,
+  RadicalWeight,
+  WubiScheme,
+  WordsTable,
+  ZigenItem,
+} from '@/types'
 
 type CharsTable = Record<string, CharEntry>
 
@@ -49,4 +56,14 @@ export function loadRadicalWeights(scheme: WubiScheme): Promise<RadicalWeight[]>
 /** 懒加载公版文章库（方案共用） */
 export function loadArticles(): Promise<Article[]> {
   return cached('articles', () => loadJson<Article[]>('articles.json'))
+}
+
+/** 懒加载常用 3500 字（按字频降序，方案共用） */
+export function loadCommon3500(): Promise<string[]> {
+  return cached('common3500', () => loadJson<string[]>('common3500.json'))
+}
+
+/** 懒加载常用词组表（方案共用） */
+export function loadWords(): Promise<WordsTable> {
+  return cached('words', () => loadJson<WordsTable>('words.json'))
 }
