@@ -10,10 +10,14 @@ const props = defineProps<{
   total: number
   /** 已用时（秒） */
   elapsedSec: number
-  /** 超时次数 */
-  timeouts: number
+  /** 超时次数（未传则不展示该项，跟打器模式无单字超时） */
+  timeouts?: number
   /** 速度单位 */
   unit?: string
+  /** 击键速度（键/分），传值时展示 */
+  keystrokes?: number
+  /** 码长，传值时展示 */
+  codeLength?: number
 }>()
 
 function pct(n: number): string {
@@ -41,11 +45,20 @@ function pct(n: number): string {
       <span class="stats__value">{{ props.elapsedSec.toFixed(0) }}</span>
       <span class="stats__unit">秒</span>
     </div>
-    <div class="stats__item">
+    <div v-if="props.timeouts !== undefined" class="stats__item">
       <span class="stats__label">超时</span>
       <span class="stats__value" :class="{ 'stats__value--warn': props.timeouts > 0 }">
         {{ props.timeouts }}
       </span>
+    </div>
+    <div v-if="props.keystrokes !== undefined" class="stats__item">
+      <span class="stats__label">击键</span>
+      <span class="stats__value">{{ props.keystrokes.toFixed(0) }}</span>
+      <span class="stats__unit">键/分</span>
+    </div>
+    <div v-if="props.codeLength !== undefined" class="stats__item">
+      <span class="stats__label">码长</span>
+      <span class="stats__value">{{ props.codeLength.toFixed(2) }}</span>
     </div>
   </div>
 </template>

@@ -12,6 +12,15 @@ const routes: RouteRecordRaw[] = [
     component: () => import('./views/PlayView.vue'),
   },
   {
+    path: '/typing/:id',
+    name: 'typing',
+    component: () => import('./views/TypingView.vue'),
+  },
+  {
+    path: '/play/free',
+    redirect: '/typing/free',
+  },
+  {
     path: '/free',
     name: 'free',
     component: () => import('./views/FreeView.vue'),

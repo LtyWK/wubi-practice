@@ -14,6 +14,11 @@ const {
   isLevelPassed,
   unlockStage,
   isStageUnlocked,
+  getTypingProgress,
+  recordTypingGroup,
+  reshuffleTyping,
+  recordEndlessBest,
+  getEndlessBest,
   getCharStat,
   exportSave,
   importSave,
@@ -48,6 +53,90 @@ describe('useSave 关卡与阶段', () => {
     unlockStage('s1')
     expect(isStageUnlocked('s1')).toBe(true)
     expect(useSave().save.value.progress.unlockedStages).toHaveLength(1)
+  })
+})
+
+describe('useSave 跟打器段位', () => {
+  it('新段位更高时覆盖旧段位', () => {
+    recordLevelResult('typing-1', 60, 0.9, true, 0, 'B')
+    recordLevelResult('typing-1', 70, 0.95, true, 0, 'S')
+    expect(useSave().getLevelResult('typing-1')?.rank).toBe('S')
+  })
+
+  it('旧段位更高时不被覆盖', () => {
+    recordLevelResult('typing-1', 70, 0.95, true, 0, 'S')
+    recordLevelResult('typing-1', 50, 0.8, true, 0, 'B')
+    expect(useSave().getLevelResult('typing-1')?.rank).toBe('S')
+  })
+
+  it('未传段位时保留历史段位', () => {
+    recordLevelResult('typing-1', 60, 0.9, true, 0, 'A')
+    recordLevelResult('typing-1', 65, 0.92, true, 0)
+    expect(useSave().getLevelResult('typing-1')?.rank).toBe('A')
+  })
+
+  it('首次未传段位时不产生段位', () => {
+    recordLevelResult('typing-1', 60, 0.9, true, 0)
+    expect(useSave().getLevelResult('typing-1')?.rank).toBeUndefined()
+  })
+})
+
+describe('useSave 跟打器进度', () => {
+  it('首次记录会创建进度', () => {
+    recordTypingGroup('t1', 1, 60)
+    const progress = getTypingProgress('t1')
+    expect(progress?.groupIndex).toBe(1)
+    expect(progress?.groupBests).toEqual([60])
+  })
+
+  it('连续两组分别记录最佳速度', () => {
+    recordTypingGroup('t1', 1, 60)
+    recordTypingGroup('t1', 2, 75)
+    const progress = getTypingProgress('t1')
+    expect(progress?.groupIndex).toBe(2)
+    expect(progress?.groupBests).toEqual([60, 75])
+  })
+
+  it('groupIndex 不倒退', () => {
+    recordTypingGroup('t1', 3, 60)
+    recordTypingGroup('t1', 1, 80)
+    expect(getTypingProgress('t1')?.groupIndex).toBe(3)
+  })
+
+  it('同组更优速度覆盖、较差速度不覆盖', () => {
+    recordTypingGroup('t1', 1, 60)
+    recordTypingGroup('t1', 1, 80)
+    recordTypingGroup('t1', 1, 50)
+    expect(getTypingProgress('t1')?.groupBests[0]).toBe(80)
+  })
+
+  it('记录组进度时保留 shuffleSeed', () => {
+    reshuffleTyping('t1', 42)
+    recordTypingGroup('t1', 1, 70)
+    expect(getTypingProgress('t1')?.shuffleSeed).toBe(42)
+  })
+
+  it('reshuffleTyping 重置进度并写入种子', () => {
+    recordTypingGroup('t1', 2, 60)
+    reshuffleTyping('t1', 9527)
+    expect(getTypingProgress('t1')).toEqual({
+      groupIndex: 0,
+      groupBests: [],
+      shuffleSeed: 9527,
+    })
+  })
+})
+
+describe('useSave 无尽模式纪录', () => {
+  it('记录历史最高完成字数', () => {
+    recordEndlessBest(120)
+    recordEndlessBest(80)
+    recordEndlessBest(150)
+    expect(getEndlessBest()).toBe(150)
+  })
+
+  it('无纪录时返回 0', () => {
+    expect(getEndlessBest()).toBe(0)
   })
 })
 
@@ -86,6 +175,48 @@ describe('useSave 导出导入', () => {
 
   it('拒绝非法 JSON', () => {
     expect(importSave('not-json').ok).toBe(false)
+  })
+
+  it('导出导入往返保留跟打器进度与纪录', () => {
+    recordTypingGroup('t1', 1, 70)
+    reshuffleTyping('t2', 123)
+    recordEndlessBest(200)
+    const text = exportSave()
+
+    resetAll()
+    expect(getTypingProgress('t1')).toBeUndefined()
+    expect(getEndlessBest()).toBe(0)
+
+    const result = importSave(text)
+    expect(result.ok).toBe(true)
+    expect(getTypingProgress('t1')?.groupBests).toEqual([70])
+    expect(getTypingProgress('t2')?.shuffleSeed).toBe(123)
+    expect(getEndlessBest()).toBe(200)
+  })
+})
+
+describe('旧存档兼容', () => {
+  it('缺少 typing/records 的 v2 存档可正常加载与写入', () => {
+    localStorage.setItem(
+      'wubi.v2.save',
+      JSON.stringify({
+        version: 2,
+        exportedAt: 0,
+        progress: { unlockedStages: [], levels: {} },
+        mistakes: {},
+        stats: {},
+      }),
+    )
+
+    const loaded = loadSaveFromStorage()
+    expect(loaded.typing).toEqual({})
+    expect(loaded.records).toEqual({})
+
+    const api = useSave()
+    api.save.value = loaded
+    expect(() => api.recordTypingGroup('t-old', 1, 66)).not.toThrow()
+    expect(api.getTypingProgress('t-old')?.groupIndex).toBe(1)
+    expect(api.getEndlessBest()).toBe(0)
   })
 })
 

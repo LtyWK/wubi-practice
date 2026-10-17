@@ -1,5 +1,12 @@
 import { ref } from 'vue'
-import type { CharStat, LevelResult, SaveV2, WubiScheme } from '@/types'
+import type {
+  CharStat,
+  LevelRank,
+  LevelResult,
+  SaveV2,
+  TypingProgress,
+  WubiScheme,
+} from '@/types'
 
 /** 86 版 V2 存档键（兼容既有数据） */
 const KEY_86 = 'wubi.v2.save'
@@ -26,6 +33,16 @@ function storageKey(scheme: WubiScheme): string {
 const scheme = currentScheme()
 const KEY = storageKey(scheme)
 
+/** 跟打器段位优先级：下标越小段位越高 */
+const RANK_ORDER: LevelRank[] = ['S', 'A', 'B', 'C']
+
+/** 取两者中更高的段位（缺省时回退到另一方） */
+function higherRank(a: LevelRank | undefined, b: LevelRank | undefined): LevelRank | undefined {
+  if (!a) return b
+  if (!b) return a
+  return RANK_ORDER.indexOf(a) <= RANK_ORDER.indexOf(b) ? a : b
+}
+
 function emptySave(): SaveV2 {
   return {
     version: 2,
@@ -33,6 +50,8 @@ function emptySave(): SaveV2 {
     progress: { unlockedStages: [], levels: {} },
     mistakes: {},
     stats: {},
+    typing: {},
+    records: {},
   }
 }
 
@@ -94,6 +113,8 @@ function loadSave(): SaveV2 {
           },
           mistakes: parsed.mistakes ?? {},
           stats: parsed.stats ?? {},
+          typing: parsed.typing ?? {},
+          records: parsed.records ?? {},
         }
       }
     } catch {
@@ -151,9 +172,15 @@ export function useSave(): {
     accuracy: number,
     passed: boolean,
     timeouts: number,
+    rank?: LevelRank,
   ) => void
   isStageUnlocked: (id: string) => boolean
   unlockStage: (id: string) => void
+  getTypingProgress: (id: string) => TypingProgress | undefined
+  recordTypingGroup: (id: string, groupIndex: number, speed: number) => void
+  reshuffleTyping: (id: string, seed: number) => void
+  recordEndlessBest: (chars: number) => void
+  getEndlessBest: () => number
   getCharStat: (char: string) => CharStat | undefined
   recordCharDone: (char: string, ms: number) => void
   recordCharError: (char: string) => void
@@ -175,9 +202,11 @@ export function useSave(): {
     accuracy: number,
     passed: boolean,
     timeouts: number,
+    rank?: LevelRank,
   ): void {
     const prev = save.value.progress.levels[id]
     const better = !prev || speed > prev.bestSpeed
+    const bestRank = higherRank(prev?.rank, rank)
     save.value.progress.levels[id] = {
       passed: (prev?.passed ?? false) || passed,
       bestSpeed: better ? speed : prev.bestSpeed,
@@ -185,6 +214,7 @@ export function useSave(): {
       attempts: (prev?.attempts ?? 0) + 1,
       timeouts: (prev?.timeouts ?? 0) + timeouts,
       at: Date.now(),
+      ...(bestRank ? { rank: bestRank } : {}),
     }
     touchSave()
   }
@@ -198,6 +228,49 @@ export function useSave(): {
       save.value.progress.unlockedStages.push(id)
       touchSave()
     }
+  }
+
+  function getTypingProgress(id: string): TypingProgress | undefined {
+    return save.value.typing?.[id]
+  }
+
+  /** 记录某关一组完成后的成绩（groupIndex 为完成后的下一组索引） */
+  function recordTypingGroup(id: string, groupIndex: number, speed: number): void {
+    const typing = save.value.typing ?? {}
+    const prev = typing[id] ?? { groupIndex: 0, groupBests: [] }
+    const bests = [...prev.groupBests]
+    const target = groupIndex - 1
+    if (target >= 0) {
+      // 补齐空洞，避免稀疏数组写盘后变成 null
+      for (let i = bests.length; i < target; i++) bests[i] = 0
+      bests[target] = Math.max(bests[target] ?? 0, speed)
+    }
+    typing[id] = {
+      ...prev,
+      groupIndex: Math.max(prev.groupIndex, groupIndex),
+      groupBests: bests,
+    }
+    save.value.typing = typing
+    touchSave()
+  }
+
+  /** 重新洗牌：清空该关进度并写入新的随机种子 */
+  function reshuffleTyping(id: string, seed: number): void {
+    const typing = save.value.typing ?? {}
+    typing[id] = { groupIndex: 0, groupBests: [], shuffleSeed: seed }
+    save.value.typing = typing
+    touchSave()
+  }
+
+  function recordEndlessBest(chars: number): void {
+    const records = save.value.records ?? {}
+    records.endlessBestChars = Math.max(records.endlessBestChars ?? 0, chars)
+    save.value.records = records
+    touchSave()
+  }
+
+  function getEndlessBest(): number {
+    return save.value.records?.endlessBestChars ?? 0
   }
 
   function ensureCharStat(char: string): CharStat {
@@ -244,6 +317,8 @@ export function useSave(): {
         },
         mistakes: data.mistakes ?? {},
         stats: data.stats ?? {},
+        typing: data.typing ?? {},
+        records: data.records ?? {},
       }
       flushSave()
       return { ok: true }
@@ -264,6 +339,11 @@ export function useSave(): {
     recordLevelResult,
     isStageUnlocked,
     unlockStage,
+    getTypingProgress,
+    recordTypingGroup,
+    reshuffleTyping,
+    recordEndlessBest,
+    getEndlessBest,
     getCharStat,
     recordCharDone,
     recordCharError,
