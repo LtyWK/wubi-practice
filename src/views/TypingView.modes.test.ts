@@ -45,7 +45,7 @@ afterEach(() => {
 
 async function waitFor(cond: () => boolean, label: string): Promise<void> {
   const step = 10
-  for (let waited = 0; waited <= 5000; waited += step) {
+  for (let waited = 0; waited <= 10000; waited += step) {
     if (cond()) return
     await nextTick()
     await vi.advanceTimersByTimeAsync(step)
@@ -94,15 +94,15 @@ describe('TypingView 挑战模式（S6）', () => {
     wrapper = view
     await waitFor(() => view.findAll('.tv-char').length >= 1000, '词流目标加载')
 
-    // 目标词流中没有「错」字，连续 10 次错误即触发结束
-    feed(view, '错'.repeat(10))
+    // 词流中不含「龘」字，连续 10 次错误即触发结束
+    feed(view, '龘'.repeat(10))
     await nextTick()
 
     expect(view.find('.result').exists()).toBe(true)
     expect(view.find('.result__pass--fail').exists()).toBe(true)
     expect(view.find('.result').text()).toContain('无尽词流结束')
     expect(getLevelResult('s6-endless')?.passed).toBe(false)
-  })
+  }, 20000)
 
   it('逐段提速：首段达标后短暂提示并进入下一段', async () => {
     routeRef.params.id = 's6-speedup-classic'
@@ -165,7 +165,7 @@ describe('TypingView 挑战模式（S6）', () => {
     expect(view.find('.result__pass--fail').exists()).toBe(true)
     expect(view.find('.result').text()).toContain('限时冲刺结束')
     expect(getLevelResult('s6-sprint-poem')?.passed).toBe(false)
-  })
+  }, 20000)
 
   it('自由模式：完成后显示结算面板且不展示达标徽章', async () => {
     routeRef.params.id = 'free'

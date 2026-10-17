@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import KeyHeatmap from '@/components/KeyHeatmap.vue'
+import CodeHint from '@/components/CodeHint.vue'
 import StatsBar from '@/components/StatsBar.vue'
 import TypingProgress from '@/components/TypingProgress.vue'
 import TypingResult from '@/components/TypingResult.vue'
-import { loadArticles, loadCommon3500, loadWords } from '@/data/loader'
+import VirtualKeyboard from '@/components/VirtualKeyboard.vue'
+import { loadArticles, loadCommon3500, loadWords, loadZigen } from '@/data/loader'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { rankFromChars, rankFromEndlessChars, rankFromSpeed } from '@/engine/rank'
 import {
@@ -19,6 +20,8 @@ import { useFreeText } from '@/composables/useFreeText'
 import { useLevels } from '@/composables/useLevels'
 import { useSave } from '@/composables/useSave'
 import { useTypingInput } from '@/composables/useTypingInput'
+import { useUiSettings } from '@/composables/useUiSettings'
+import { ensureScheme, getScheme } from '@/schemes/registry'
 import type {
   Article,
   LevelRank,
@@ -26,6 +29,7 @@ import type {
   TypingMode,
   TypingSource,
   WordsTable,
+  ZigenItem,
 } from '@/types'
 
 type ViewMode = TypingMode | 'free'
@@ -36,12 +40,14 @@ interface ModeRecord {
   accuracy: number
   elapsedMs: number
   done: number
-  keystrokes: number
-  keySpeed: number
-  codeLength: number
-  freq: Record<string, number>
   errors: { char: string; input: string }[]
 }
+
+/** 显示项：汉字（对应引擎索引）／标点装饰／段落换行（自由模式与文章保留原文排版） */
+type DisplayItem =
+  | { kind: 'char'; char: string; index: number }
+  | { kind: 'punct'; char: string }
+  | { kind: 'br' }
 
 interface ShowResultOptions {
   title: string
@@ -82,15 +88,29 @@ const pageTitle = computed(() => {
 })
 
 // ---------- 通用状态 ----------
+const { scheme: uiScheme, align, setAlign } = useUiSettings()
+const scheme = computed(() => getScheme(uiScheme.value))
+
+/** 键位 → 字根表条目（虚拟键盘渲染，与编码练习关一致） */
+const zigenMap = ref<Record<string, ZigenItem>>({})
+
 const inputEl = ref<HTMLInputElement | null>(null)
 const panelBox = ref<HTMLElement | null>(null)
 const ready = ref(false)
 const session = ref<TypingSession>(createTypingSession([]))
 const now = ref(Date.now())
-const keyFreq = ref<Record<string, number>>({})
-const showHeatmap = ref(true)
+/** 显示项（含标点/换行装饰）：为空时按纯汉字流渲染 */
+const display = ref<DisplayItem[] | null>(null)
 /** 目标切换计数：用于长文本自动滚回当前字 */
 const sessionToken = ref(0)
+
+/** 虚拟键盘物理按键高亮（按下后短暂点亮） */
+const pressedKey = ref('')
+let pressTimer: number | undefined
+const PRESS_FLASH_MS = 180
+
+/** 当前方案码表是否已加载（拆字提示就绪） */
+const schemeReady = ref(false)
 
 /** 组/段达标后的短暂提示，1200ms 后自动推进 */
 const advancePending = ref(false)
@@ -113,25 +133,12 @@ const EMPTY_RECORD: ModeRecord = {
   accuracy: 1,
   elapsedMs: 0,
   done: 0,
-  keystrokes: 0,
-  keySpeed: 0,
-  codeLength: 0,
-  freq: {},
   errors: [],
 }
 const shownRecord = computed(() => resultRecord.value ?? EMPTY_RECORD)
 
 // ---------- 统计 ----------
 const liveStats = computed(() => typingStats(session.value, now.value))
-const keyTotal = computed(() =>
-  Object.values(keyFreq.value).reduce((sum, count) => sum + count, 0),
-)
-const keySpeed = computed(() =>
-  liveStats.value.elapsedMs > 0 ? (keyTotal.value * 60000) / liveStats.value.elapsedMs : 0,
-)
-const codeLength = computed(() =>
-  liveStats.value.done > 0 ? keyTotal.value / liveStats.value.done : 0,
-)
 const goalChars = computed(() => config.value?.charTarget ?? 0)
 const displayDone = computed(() => liveStats.value.done)
 const displayTotal = computed(() => {
@@ -140,11 +147,6 @@ const displayTotal = computed(() => {
   }
   return session.value.target.length
 })
-
-const errorCount = computed(() => session.value.errors.length)
-const summaryText = computed(
-  () => `总击键 ${keyTotal.value} · 错误 ${errorCount.value} · 码长 ${codeLength.value.toFixed(2)}`,
-)
 
 function formatClock(seconds: number): string {
   const total = Math.max(0, Math.ceil(seconds))
@@ -158,26 +160,15 @@ function average(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length
 }
 
-/** 合并多段成绩：速度/正确率取简单平均，用时与击键累加 */
+/** 合并多段成绩：速度/正确率取简单平均，用时累加 */
 function mergeRecords(records: ModeRecord[]): ModeRecord {
   const elapsedMs = records.reduce((sum, record) => sum + record.elapsedMs, 0)
   const done = records.reduce((sum, record) => sum + record.done, 0)
-  const keystrokes = records.reduce((sum, record) => sum + record.keystrokes, 0)
-  const freq: Record<string, number> = {}
-  for (const record of records) {
-    for (const [code, count] of Object.entries(record.freq)) {
-      freq[code] = (freq[code] ?? 0) + count
-    }
-  }
   return {
     speed: average(records.map((record) => record.speed)),
     accuracy: average(records.map((record) => record.accuracy)),
     elapsedMs,
     done,
-    keystrokes,
-    keySpeed: elapsedMs > 0 ? (keystrokes * 60000) / elapsedMs : 0,
-    codeLength: done > 0 ? keystrokes / done : 0,
-    freq,
     errors: records.flatMap((record) => record.errors),
   }
 }
@@ -185,16 +176,11 @@ function mergeRecords(records: ModeRecord[]): ModeRecord {
 function makeRecord(): ModeRecord {
   const finishedAt = session.value.finishedAt ?? Date.now()
   const stats = typingStats(session.value, finishedAt)
-  const keystrokes = keyTotal.value
   return {
     speed: stats.speed,
     accuracy: stats.accuracy,
     elapsedMs: stats.elapsedMs,
     done: stats.done,
-    keystrokes,
-    keySpeed: stats.elapsedMs > 0 ? (keystrokes * 60000) / stats.elapsedMs : 0,
-    codeLength: stats.done > 0 ? keystrokes / stats.done : 0,
-    freq: { ...keyFreq.value },
     errors: session.value.errors.map((error) => ({
       char: session.value.target[error.index] ?? '',
       input: error.input,
@@ -209,6 +195,26 @@ function isHanChar(char: string): boolean {
 
 function hanChars(text: string): string[] {
   return [...text].filter(isHanChar)
+}
+
+/** 原文 → 引擎目标汉字 + 显示项：标点与换行仅装饰显示，不参与跟打（自由模式与耐力关保留排版） */
+function buildDisplay(text: string): { chars: string[]; items: DisplayItem[] } {
+  const chars: string[] = []
+  const items: DisplayItem[] = []
+  const lines = text.split('\n')
+  lines.forEach((line, lineIndex) => {
+    if (lineIndex > 0) items.push({ kind: 'br' })
+    for (const char of line) {
+      if (char === '\r') continue
+      if (isHanChar(char)) {
+        items.push({ kind: 'char', char, index: chars.length })
+        chars.push(char)
+      } else {
+        items.push({ kind: 'punct', char })
+      }
+    }
+  })
+  return { chars, items }
 }
 
 async function loadArraySource(source: TypingSource): Promise<string[]> {
@@ -300,15 +306,18 @@ function scheduleAdvance(action: () => void): void {
   }, 1200)
 }
 
-function startTarget(chars: string[]): void {
+function startTarget(chars: string[], items: DisplayItem[] | null = null): void {
   clearAdvance()
   resultVisible.value = false
   resultRecord.value = null
-  keyFreq.value = {}
+  display.value = items
   session.value = createTypingSession(chars)
   sessionToken.value += 1
   now.value = Date.now()
-  void nextTick(() => focusInput())
+  void nextTick(() => {
+    syncFocusRect()
+    focusInput()
+  })
 }
 
 function showResult(options: ShowResultOptions): void {
@@ -523,6 +532,8 @@ function finishSprint(): void {
 }
 
 async function setupSprint(cfgValue: TypingConfig): Promise<boolean> {
+  // 诗词内容默认居中（仍可手动切换）
+  setAlign('center')
   const chosen = await loadChosenArticles(cfgValue.articleIds)
   const base = chosen.flatMap((article) => hanChars(article.paragraphs.join('\n')))
   if (base.length === 0) {
@@ -599,6 +610,8 @@ function finishSpeedupLevel(): void {
 }
 
 async function setupSpeedup(cfgValue: TypingConfig): Promise<boolean> {
+  // 宋词 / 古文内容默认居中（仍可手动切换）
+  setAlign('center')
   const chosen = await loadChosenArticles(cfgValue.articleIds)
   const segments = chosen
     .flatMap((article) => article.paragraphs.map((paragraph) => hanChars(paragraph)))
@@ -614,7 +627,7 @@ async function setupSpeedup(cfgValue: TypingConfig): Promise<boolean> {
 }
 
 // ---------- 耐力（S6） ----------
-const marathonTarget = ref<string[]>([])
+const marathonDisplay = ref<{ chars: string[]; items: DisplayItem[] } | null>(null)
 
 function finishMarathon(): void {
   const record = makeRecord()
@@ -629,19 +642,22 @@ function finishMarathon(): void {
     passLabel: `≥${require.value.speed} 字/分 · 正确率 ≥${Math.round(require.value.accuracy * 100)}%`,
     rank,
     record,
-    retry: () => startTarget(marathonTarget.value),
+    retry: () => {
+      const built = marathonDisplay.value
+      if (built) startTarget(built.chars, built.items)
+    },
   })
 }
 
 async function setupMarathon(cfgValue: TypingConfig): Promise<boolean> {
   const chosen = await loadChosenArticles(cfgValue.articleIds)
-  const chars = chosen.flatMap((article) => hanChars(article.paragraphs.join('\n')))
-  if (chars.length === 0) {
+  const built = buildDisplay(chosen.map((article) => article.paragraphs.join('\n')).join('\n'))
+  if (built.chars.length === 0) {
     router.replace('/')
     return false
   }
-  marathonTarget.value = chars
-  startTarget(chars)
+  marathonDisplay.value = built
+  startTarget(built.chars, built.items)
   return true
 }
 
@@ -800,20 +816,21 @@ async function setupGauntlet(cfgValue: TypingConfig): Promise<boolean> {
 
 // ---------- 自由模式 ----------
 function setupFree(): boolean {
-  const chars = hanChars(freeText.value)
+  const { chars, items } = buildDisplay(freeText.value)
   if (chars.length === 0) {
     router.replace('/free')
     return false
   }
-  startTarget(chars)
+  startTarget(chars, items)
   return true
 }
 
 function finishFree(): void {
+  const { chars, items } = buildDisplay(freeText.value)
   showResult({
     title: '自由练习完成',
     record: makeRecord(),
-    retry: () => startTarget(hanChars(freeText.value)),
+    retry: () => startTarget(chars, items),
   })
 }
 
@@ -827,8 +844,24 @@ function canInput(): boolean {
   )
 }
 
+/** 物理按键 → 虚拟键盘键位标识（仅字母 / 空格 / 退格有对应键帽） */
+function codeToKey(code: string): string {
+  if (code === 'Space') return ' '
+  if (code === 'Backspace') return 'Backspace'
+  if (code.startsWith('Key')) return code.slice(3).toLowerCase()
+  return ''
+}
+
+/** 物理按键按下时点亮虚拟键盘对应键帽 */
 function onKey(code: string): void {
-  keyFreq.value[code] = (keyFreq.value[code] ?? 0) + 1
+  const key = codeToKey(code)
+  if (!key) return
+  pressedKey.value = key
+  if (pressTimer !== undefined) window.clearTimeout(pressTimer)
+  pressTimer = window.setTimeout(() => {
+    pressTimer = undefined
+    pressedKey.value = ''
+  }, PRESS_FLASH_MS)
 }
 
 function onTargetComplete(): void {
@@ -927,9 +960,11 @@ function restart(): void {
     case 'speedup':
       startSpeedupSegment(segmentIndex.value)
       break
-    case 'marathon':
-      startTarget(marathonTarget.value)
+    case 'marathon': {
+      const built = marathonDisplay.value
+      if (built) startTarget(built.chars, built.items)
       break
+    }
     case 'endless':
       startTarget(endlessPool.value)
       break
@@ -986,15 +1021,89 @@ function displayChar(index: number): string {
   return session.value.target[index] ?? ''
 }
 
-/** 长文本跟随当前字滚动；新目标（sessionToken 变化）重新定位 */
+/** 渲染序列：有装饰项（标点/换行）用原文排版，否则按纯汉字流 */
+const displayItems = computed<DisplayItem[]>(
+  () =>
+    display.value ??
+    session.value.target.map((char, index) => ({ kind: 'char' as const, char, index })),
+)
+
+/** 网格布局（爬坡 / 毕业综合）：与文本面板网格一致，不提供对齐切换 */
+const isGridLayout = computed(() => isClimb.value || mode.value === 'gauntlet')
+
+/** 文本对齐（全局设置，与编码练习关共用）：仅流式布局生效 */
+const targetClasses = computed(() => ({
+  'typing__target--grid': isGridLayout.value,
+  'typing__target--flow': !isGridLayout.value,
+  'typing__flow--center': !isGridLayout.value && align.value === 'center',
+  'typing__flow--left': !isGridLayout.value && align.value === 'left',
+}))
+
+/** 切换对齐并恢复输入焦点 */
+function handleAlign(value: 'center' | 'left'): void {
+  setAlign(value)
+  void nextTick(() => focusInput())
+}
+
+/** 光标可见条件：进行中且目标未完成 */
+const caretVisible = computed(
+  () =>
+    ready.value &&
+    !resultVisible.value &&
+    session.value.finishedAt === null &&
+    session.value.target.length > 0,
+)
+
+const caretStyle = ref<Record<string, string>>({})
+
+/** 同步隐藏输入框与光标到当前待输入字的位置（IME 候选框跟随该位置出现） */
+function syncFocusRect(): void {
+  const box = panelBox.value
+  const input = inputEl.value
+  if (!box || !input) return
+  const active = box.querySelector<HTMLElement>('.tv-char[data-active="true"]')
+  if (!active) {
+    input.style.left = '0px'
+    input.style.top = '0px'
+    input.style.width = '1px'
+    input.style.height = '1em'
+    caretStyle.value = {}
+    return
+  }
+  const boxRect = box.getBoundingClientRect()
+  const rect = active.getBoundingClientRect()
+  const left = rect.left - boxRect.left + box.scrollLeft
+  const top = rect.top - boxRect.top + box.scrollTop
+  const height = Math.max(rect.height, 16)
+  input.style.left = `${left}px`
+  input.style.top = `${top}px`
+  input.style.width = `${Math.max(rect.width, 6)}px`
+  input.style.height = `${height}px`
+  caretStyle.value = { left: `${left - 1}px`, top: `${top}px`, height: `${height}px` }
+}
+
+/** 拆字提示卡片：当前待输入字的五笔拆解（跟打模式下仅作参考） */
+const hintData = computed(() => {
+  if (!schemeReady.value || resultVisible.value || session.value.finishedAt !== null) return null
+  const char = session.value.target[session.value.pos]
+  if (!char) return null
+  const code = scheme.value.code(char)
+  if (!code) return null
+  return { char, code, items: scheme.value.hint(char) }
+})
+
+/** 长文本跟随当前字滚动；新目标（sessionToken 变化）重新定位；光标与输入框跟随 */
 watch(
-  () => [sessionToken.value, session.value.pos] as const,
+  () => [sessionToken.value, session.value.pos, session.value.errorSlot] as const,
   async () => {
     await nextTick()
     const el = panelBox.value?.querySelector<HTMLElement>('.tv-char[data-active="true"]')
     if (el && typeof el.scrollIntoView === 'function') {
       el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     }
+    syncFocusRect()
+    // 平滑滚动过程中再校准一次
+    window.setTimeout(() => syncFocusRect(), 260)
   },
 )
 
@@ -1032,6 +1141,15 @@ async function setupMode(cfgValue: TypingConfig): Promise<boolean> {
 
 onMounted(async () => {
   window.addEventListener('keydown', onWindowKeydown)
+  window.addEventListener('resize', syncFocusRect)
+
+  // 字根键盘与拆字提示需要当前方案数据（后台加载，不阻塞练习）
+  void ensureScheme(uiScheme.value).then(() => {
+    schemeReady.value = true
+  })
+  void loadZigen(uiScheme.value).then((data) => {
+    zigenMap.value = Object.fromEntries(data.map((z) => [z.key, z]))
+  })
 
   if (isFree.value) {
     if (!setupFree()) return
@@ -1059,7 +1177,9 @@ onMounted(async () => {
 onUnmounted(() => {
   disposed = true
   window.removeEventListener('keydown', onWindowKeydown)
+  window.removeEventListener('resize', syncFocusRect)
   if (tickTimer !== undefined) window.clearInterval(tickTimer)
+  if (pressTimer !== undefined) window.clearTimeout(pressTimer)
   clearAdvance()
 })
 </script>
@@ -1083,8 +1203,6 @@ onUnmounted(() => {
       :done="displayDone"
       :total="displayTotal"
       :elapsed-sec="liveStats.elapsedMs / 1000"
-      :keystrokes="keySpeed"
-      :code-length="codeLength"
     />
 
     <p v-if="ready && !resultVisible" class="typing__mode">{{ modeInfo }}</p>
@@ -1093,36 +1211,60 @@ onUnmounted(() => {
 
     <template v-else-if="!resultVisible">
       <section class="typing__stage" @click="focusInput">
-        <input
-          ref="inputEl"
-          class="typing__input"
-          type="text"
-          autocomplete="off"
-          autocapitalize="off"
-          autocorrect="off"
-          spellcheck="false"
-          aria-label="跟打输入"
-        />
         <div v-if="advancePending" class="typing__banner">{{ bannerText }}</div>
+        <div v-if="ready && !isGridLayout" class="typing__align">
+          <span class="typing__align-group">
+            <button
+              class="align-btn"
+              :class="{ 'align-btn--active': align === 'center' }"
+              @click.stop="handleAlign('center')"
+            >
+              居中
+            </button>
+            <button
+              class="align-btn"
+              :class="{ 'align-btn--active': align === 'left' }"
+              @click.stop="handleAlign('left')"
+            >
+              左对齐
+            </button>
+          </span>
+        </div>
         <div
           ref="panelBox"
           class="typing__target"
-          :class="isClimb || mode === 'gauntlet' ? 'typing__target--grid' : 'typing__target--flow'"
+          :class="targetClasses"
+          @scroll.passive="syncFocusRect"
         >
-          <span
-            v-for="(char, index) in session.target"
-            :key="`${index}-${char}`"
-            class="tv-char"
-            :class="charClass(index)"
-            :data-index="index"
-            :data-active="index === session.pos ? 'true' : undefined"
-            :title="
-              index === session.pos && session.errorSlot
-                ? `错误输入：${session.errorSlot} · 正确：${char}`
-                : undefined
-            "
-            >{{ displayChar(index) }}</span
-          >
+          <!-- 隐藏输入框与光标跟随当前待输入字（IME 候选框随之定位） -->
+          <input
+            ref="inputEl"
+            class="typing__input"
+            type="text"
+            autocomplete="off"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            aria-label="跟打输入"
+          />
+          <span v-if="caretVisible" class="typing__caret" :style="caretStyle"></span>
+          <template v-for="(item, i) in displayItems" :key="`${sessionToken}-${i}-${item.kind}`">
+            <br v-if="item.kind === 'br'" />
+            <span v-else-if="item.kind === 'punct'" class="tv-punct">{{ item.char }}</span>
+            <span
+              v-else
+              class="tv-char"
+              :class="charClass(item.index)"
+              :data-index="item.index"
+              :data-active="item.index === session.pos ? 'true' : undefined"
+              :title="
+                item.index === session.pos && session.errorSlot
+                  ? `错误输入：${session.errorSlot} · 正确：${item.char}`
+                  : undefined
+              "
+              >{{ displayChar(item.index) }}</span
+            >
+          </template>
         </div>
         <p v-if="session.errorSlot" class="typing__error-hint">
           当前应为「{{ session.target[session.pos] }}」，刚输入「{{ session.errorSlot }}」
@@ -1139,22 +1281,19 @@ onUnmounted(() => {
         @select="onSelectGroup"
       />
 
+      <CodeHint
+        v-if="hintData"
+        :char="hintData.char"
+        :code="hintData.code"
+        :items="hintData.items"
+        input=""
+      />
+
       <div class="typing__bottom">
-        <div class="typing__tools">
-          <button type="button" class="typing__btn" @click="showHeatmap = !showHeatmap">
-            {{ showHeatmap ? '键频：开' : '键频：关' }}
-          </button>
-          <button
-            v-if="mode === 'endless'"
-            type="button"
-            class="typing__btn"
-            @click="finishEndless"
-          >
-            结束本局
-          </button>
+        <div v-if="mode === 'endless'" class="typing__tools">
+          <button type="button" class="typing__btn" @click="finishEndless">结束本局</button>
         </div>
-        <KeyHeatmap v-if="showHeatmap" :freq="keyFreq" compact />
-        <p class="typing__summary">{{ summaryText }}</p>
+        <VirtualKeyboard :press="pressedKey" :zigen="zigenMap" />
       </div>
     </template>
 
@@ -1164,13 +1303,9 @@ onUnmounted(() => {
       :speed="shownRecord.speed"
       :accuracy="shownRecord.accuracy"
       :elapsed-ms="shownRecord.elapsedMs"
-      :keystrokes="shownRecord.keystrokes"
-      :key-speed="shownRecord.keySpeed"
-      :code-length="shownRecord.codeLength"
       :rank="resultRank"
       :passed="resultPassed"
       :pass-label="resultPassLabel"
-      :freq="shownRecord.freq"
       :errors="shownRecord.errors"
       :next-label="resultNextLabel || undefined"
       @retry="handleResultRetry"
@@ -1262,19 +1397,54 @@ onUnmounted(() => {
   cursor: text;
 }
 
-/* 透明输入框覆盖练习区：捕获 IME 事件，不显示输入内容 */
+/* 跟随当前字的透明输入框：捕获 IME 事件，输入法候选框随其位置出现 */
 .typing__input {
   position: absolute;
-  inset: 0;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: 6px;
+  height: 1em;
+  padding: 0;
+  margin: 0;
   border: none;
+  outline: none;
   background: transparent;
   color: transparent;
+  caret-color: transparent;
   opacity: 0;
   font-size: 16px;
   cursor: text;
+  pointer-events: auto;
+}
+
+/* 文本光标：跟随当前待输入字 */
+.typing__caret {
+  position: absolute;
+  z-index: 2;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--color-primary);
+  pointer-events: none;
+  animation: tv-caret-blink 1.06s steps(1) infinite;
+}
+
+@keyframes tv-caret-blink {
+  0%,
+  55% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0.15;
+  }
+}
+
+/* 标点等装饰字符：显示但不参与跟打 */
+.tv-punct {
+  color: var(--text-pending);
+  opacity: 0.7;
+  user-select: none;
 }
 
 .typing__banner {
@@ -1291,11 +1461,55 @@ onUnmounted(() => {
   text-align: center;
 }
 
+/* 对齐切换（与编码练习关的文本面板一致）：仅流式布局显示 */
+.typing__align {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-1);
+}
+
+.typing__align-group {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.align-btn {
+  padding: 2px 10px;
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+  cursor: pointer;
+}
+
+.align-btn + .align-btn {
+  border-left: 1px solid var(--color-border);
+}
+
+.align-btn--active {
+  background: var(--color-primary-weak);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
 .typing__target {
   position: relative;
   z-index: 2;
   pointer-events: none;
   user-select: text;
+}
+
+/* 文本对齐：与全局设置联动 */
+.typing__flow--center {
+  text-align: center;
+}
+
+.typing__flow--left {
+  text-align: left;
 }
 
 .typing__target--flow {
@@ -1371,12 +1585,6 @@ onUnmounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
-}
-
-.typing__summary {
-  color: var(--color-text-muted);
-  font-size: var(--font-sm);
-  text-align: center;
 }
 
 @media (max-width: 640px) {

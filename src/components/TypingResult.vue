@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import KeyHeatmap from './KeyHeatmap.vue'
 
 type ResultRank = 'S' | 'A' | 'B' | 'C'
 
@@ -21,20 +20,12 @@ const props = withDefaults(
     accuracy: number
     /** 用时（毫秒） */
     elapsedMs: number
-    /** 总击键数 */
-    keystrokes?: number
-    /** 击键速度（键/分） */
-    keySpeed?: number
-    /** 码长 */
-    codeLength?: number
     /** 段位 */
     rank?: ResultRank
     /** 达标状态（未传则不显示达标徽章） */
     passed?: boolean
     /** 达标线说明 */
     passLabel?: string
-    /** 键频（传值时渲染热力图） */
-    freq?: Record<string, number>
     /** 错误记录（目标字 + 错误输入） */
     errors?: { char: string; input: string }[]
     /** 下一组按钮文案（未传则不显示） */
@@ -43,13 +34,9 @@ const props = withDefaults(
     show?: boolean
   }>(),
   {
-    keystrokes: undefined,
-    keySpeed: undefined,
-    codeLength: undefined,
     rank: undefined,
     passed: undefined,
     passLabel: undefined,
-    freq: undefined,
     errors: () => [],
     nextLabel: undefined,
     show: true,
@@ -63,23 +50,11 @@ const emit = defineEmits<{
 }>()
 
 const metrics = computed<Metric[]>(() => {
-  const list: Metric[] = [
+  return [
     { label: '速度', value: props.speed.toFixed(0), unit: '字/分' },
     { label: '正确率', value: `${Math.round(props.accuracy * 100)}%` },
     { label: '用时', value: (props.elapsedMs / 1000).toFixed(1), unit: '秒' },
   ]
-  if (props.keystrokes !== undefined) {
-    list.push({
-      label: '击键',
-      value: String(Math.round(props.keystrokes)),
-      unit: '键',
-      note: props.keySpeed !== undefined ? `${props.keySpeed.toFixed(0)} 键/分` : undefined,
-    })
-  }
-  if (props.codeLength !== undefined) {
-    list.push({ label: '码长', value: props.codeLength.toFixed(2) })
-  }
-  return list
 })
 
 const rankClass = computed(() => (props.rank ? `result__rank--${props.rank.toLowerCase()}` : ''))
@@ -118,11 +93,6 @@ const restErrors = computed(() => Math.max(0, props.errors.length - 20))
         </dd>
       </div>
     </dl>
-
-    <section v-if="props.freq !== undefined" class="result__section">
-      <h3 class="result__subtitle">键频分布</h3>
-      <KeyHeatmap :freq="props.freq" />
-    </section>
 
     <section v-if="props.errors.length > 0" class="result__section">
       <h3 class="result__subtitle">

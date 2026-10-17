@@ -14,10 +14,6 @@ const props = defineProps<{
   timeouts?: number
   /** 速度单位 */
   unit?: string
-  /** 击键速度（键/分），传值时展示 */
-  keystrokes?: number
-  /** 码长，传值时展示 */
-  codeLength?: number
 }>()
 
 function pct(n: number): string {
@@ -50,15 +46,6 @@ function pct(n: number): string {
       <span class="stats__value" :class="{ 'stats__value--warn': props.timeouts > 0 }">
         {{ props.timeouts }}
       </span>
-    </div>
-    <div v-if="props.keystrokes !== undefined" class="stats__item">
-      <span class="stats__label">击键</span>
-      <span class="stats__value">{{ props.keystrokes.toFixed(0) }}</span>
-      <span class="stats__unit">键/分</span>
-    </div>
-    <div v-if="props.codeLength !== undefined" class="stats__item">
-      <span class="stats__label">码长</span>
-      <span class="stats__value">{{ props.codeLength.toFixed(2) }}</span>
     </div>
   </div>
 </template>

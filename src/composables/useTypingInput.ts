@@ -5,13 +5,13 @@ export interface TypingInputHandlers {
   onText: (text: string) => void
   /** 退格（非 IME 组合状态下） */
   onBackspace: () => void
-  /** 物理按键（e.code 白名单：KeyA-KeyZ / Digit0-9 / Space / Backspace；IME 组合期间也统计） */
+  /** 物理按键按下（e.code 白名单：KeyA-KeyZ / Digit0-9 / Space / Backspace；IME 组合期间也回调，用于键帽反馈） */
   onKey?: (code: string) => void
   /** 是否接受输入（ref 或函数均可） */
   enabled?: () => boolean
 }
 
-/** 物理键频统计白名单（按 KeyboardEvent.code） */
+/** 物理按键回调白名单（按 KeyboardEvent.code） */
 const KEY_CODES = new Set<string>()
 for (let i = 0; i < 26; i += 1) {
   KEY_CODES.add(`Key${String.fromCharCode(65 + i)}`)
@@ -30,12 +30,12 @@ function extractHan(text: string): string {
 }
 
 /**
- * 跟打器输入捕获：隐藏 input 上的 IME 汉字流 + 物理键频。
+ * 跟打器输入捕获：隐藏 input 上的 IME 汉字流 + 物理按键回调（键帽反馈用）。
  *
  * - composition 期间的 input 事件忽略，compositionend 提交最终汉字；
  * - 兼容「compositionend 后仍派发同一次 input」的浏览器，避免重复提交；
  * - 屏蔽粘贴与拖放；输入框自动聚焦，视图可调用 focus() 重新聚焦；
- * - enabled() 为 false 时文本、退格、键频全部忽略。
+ * - enabled() 为 false 时文本、退格、按键回调全部忽略。
  */
 export function useTypingInput(
   inputEl: Ref<HTMLInputElement | null>,
@@ -99,7 +99,7 @@ export function useTypingInput(
 
   function onKeydown(event: KeyboardEvent): void {
     if (!enabled()) return
-    // 物理键频：长按不重复计数；IME 组合期间同样统计
+    // 物理按键回调：长按不重复触发；IME 组合期间同样回调（用于键帽反馈）
     if (KEY_CODES.has(event.code) && !event.repeat) handlers.onKey?.(event.code)
     // 组合中的退格交给输入法处理；普通退格仅清除错误槽
     if (event.code === 'Backspace' && !composing && !event.isComposing) {

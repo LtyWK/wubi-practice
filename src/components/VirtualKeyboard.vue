@@ -13,6 +13,8 @@ const props = withDefaults(
     zigen?: Record<string, ZigenItem>
     /** 禁用态 */
     disabled?: boolean
+    /** 物理按键按下（键位标识：字母 / " " / "Backspace"），短暂高亮 */
+    press?: string
   }>(),
   {
     highlight: '',
@@ -20,6 +22,7 @@ const props = withDefaults(
     sticky: null,
     zigen: undefined,
     disabled: false,
+    press: '',
   },
 )
 
@@ -60,6 +63,7 @@ function keyClass(key: string): Record<string, boolean> {
     'vk__key--flash-ok': f?.key === key && f.type === 'ok',
     'vk__key--flash-bad': f?.key === key && f.type === 'bad',
     'vk__key--flash-timeout': f?.key === key && f.type === 'timeout',
+    'vk__key--press': props.press === key,
     'vk__key--muted': !area,
     [`vk__key--area-${area ?? 0}`]: true,
   }
@@ -309,6 +313,12 @@ function sizeOf(key: string): number {
   50% {
     box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.12);
   }
+}
+
+/* 物理按键按下：跟打器模式的轻反馈 */
+.vk__key--press {
+  background: var(--key-hint, #cfe0f3);
+  border-color: var(--color-primary);
 }
 
 /* 常亮：最近一次输入结果 */

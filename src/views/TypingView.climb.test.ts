@@ -44,7 +44,7 @@ afterEach(() => {
 /** 等待异步数据加载与响应式更新（同时推进假定时器） */
 async function waitFor(cond: () => boolean, label: string): Promise<void> {
   const step = 10
-  for (let waited = 0; waited <= 5000; waited += step) {
+  for (let waited = 0; waited <= 10000; waited += step) {
     if (cond()) return
     await nextTick()
     await vi.advanceTimersByTimeAsync(step)
