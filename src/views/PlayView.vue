@@ -19,6 +19,7 @@ import {
   type PracticeItem,
   type PracticeSession,
 } from '@/engine/judge'
+import { MIN_LIVE_WINDOW_MS } from '@/engine/stats'
 import { checkTimeout, elapsed, startChar, type CharTimer } from '@/engine/timer'
 import { ensureScheme, getScheme } from '@/schemes/registry'
 import { playKeySound } from '@/audio/sound'
@@ -93,6 +94,8 @@ const sticky = ref<KeyFeedback | null>(null)
 const charTimer = ref<CharTimer>(startChar(0))
 const sessionStartAt = ref(0)
 const timeouts = ref(0)
+/** 退格次数（击键统计附带，与引擎 totalKeys 相加） */
+const backspaceCount = ref(0)
 const streak = ref<Record<string, number>>({})
 const zigenMap = ref<Record<string, ZigenItem>>({})
 /** 常用字根权重（常用字根强化训练用，按一级常用字使用频率降序） */
@@ -140,11 +143,19 @@ const totalKeys = computed(() =>
   mode.value === 'zigen' ? zigenTotalKeys.value : (session.value?.totalKeys ?? 0),
 )
 const stats = computed(() => {
-  const elapsedMs = sessionStartAt.value > 0 ? Math.max(0, now.value - sessionStartAt.value) : 0
+  const startedAt = sessionStartAt.value
+  const elapsedMs = startedAt > 0 ? Math.max(0, now.value - startedAt) : 0
   const elapsedSec = elapsedMs / 1000
-  const speed = elapsedSec > 0 ? (doneCount.value / elapsedSec) * 60 : 0
+  // 实时显示按至少 1 秒窗口计算，避免首键瞬间速度虚高；完成与结算用真实用时
+  const displayMs =
+    startedAt > 0 ? (finished.value ? elapsedMs : Math.max(elapsedMs, MIN_LIVE_WINDOW_MS)) : 0
+  const displaySec = displayMs / 1000
+  const speed = displaySec > 0 ? (doneCount.value / displaySec) * 60 : 0
   const accuracy = totalKeys.value === 0 ? 1 : correctKeys.value / totalKeys.value
-  return { speed, accuracy, elapsedSec }
+  // 击键：物理按键总数（编码击键含错误键与退格，与跟打器口径一致）
+  const keys = totalKeys.value + backspaceCount.value
+  const keystrokes = displaySec > 0 ? (keys / displaySec) * 60 : 0
+  return { speed, accuracy, elapsedSec, keystrokes }
 })
 const unit = computed(() => (isZigen.value ? '键/分' : '字/分'))
 
@@ -439,6 +450,7 @@ function resetCommon(): void {
   sticky.value = null
   timeouts.value = 0
   timeoutCounts.value = {}
+  backspaceCount.value = 0
   sessionStartAt.value = 0
   charTimer.value = startChar(0)
   now.value = Date.now()
@@ -572,6 +584,7 @@ function handleInput(key: string): void {
     // 退格：仅文本模式下、已有输入时生效（字根关与未开始忽略）
     if (!started.value || mode.value === 'zigen') return
     if (!session.value || session.value.input.length === 0) return
+    backspaceCount.value += 1
     handleTextKey(key)
     return
   }
@@ -759,6 +772,7 @@ onUnmounted(() => {
       :elapsed-sec="stats.elapsedSec"
       :timeouts="timeouts"
       :unit="unit"
+      :keystrokes="stats.keystrokes"
     />
 
     <TextPanel

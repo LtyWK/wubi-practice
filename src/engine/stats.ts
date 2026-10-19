@@ -1,5 +1,12 @@
 import type { PracticeSession } from './judge'
 
+/**
+ * 实时显示的最小统计窗口（毫秒）。
+ * 开始时按键/字数样本过少，按真实耗时计算会得到虚高数值（首键 1 键 30ms ≈ 2000 键/分），
+ * 因此在完成前按至少 1 秒窗口计算；完成与结算仍使用真实用时。
+ */
+export const MIN_LIVE_WINDOW_MS = 1000
+
 /** 统计结果 */
 export interface Stats {
   /** 速度：字/分钟 */

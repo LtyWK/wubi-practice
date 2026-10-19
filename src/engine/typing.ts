@@ -46,11 +46,21 @@ export function createTypingSession(target: string[]): TypingSession {
 }
 
 /**
+ * 以指定时间启动计时（跟打器：首次物理按键时调用，使用时包含首字输入时间，
+ * 避免「首字免费」导致速度虚高）。已开始计时的会话保持不变。
+ */
+export function startTyping(s: TypingSession, at: number): TypingSession {
+  if (s.startAt !== null) return s
+  return { ...s, startAt: at }
+}
+
+/**
  * 提交一个字符。
  * - 已完成（pos 达到 target 长度）时忽略输入，原样返回；
  * - 与目标一致：前进一格并清空错误槽，末字完成时记录 finishedAt 并派发 complete；
  * - 不一致：覆盖错误槽并记录错误，不前进。
  *   错误槽有值时直接输入正确字符即可前进，无需先退格。
+ * - startAt 兜底：未调用 startTyping 时以首次提交时间开始计时。
  */
 export function feedChar(
   s: TypingSession,

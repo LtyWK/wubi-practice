@@ -9,10 +9,12 @@ import VirtualKeyboard from '@/components/VirtualKeyboard.vue'
 import { loadArticles, loadCommon3500, loadWords, loadZigen } from '@/data/loader'
 import { findLevel, stageOfLevel } from '@/data/stages'
 import { rankFromChars, rankFromEndlessChars, rankFromSpeed } from '@/engine/rank'
+import { MIN_LIVE_WINDOW_MS } from '@/engine/stats'
 import {
   createTypingSession,
   feedBackspace,
   feedChar,
+  startTyping,
   typingStats,
   type TypingSession,
 } from '@/engine/typing'
@@ -40,6 +42,8 @@ interface ModeRecord {
   accuracy: number
   elapsedMs: number
   done: number
+  /** 物理按键总数（结算击键速度用） */
+  keyCount: number
   errors: { char: string; input: string }[]
 }
 
@@ -109,6 +113,13 @@ const pressedKey = ref('')
 let pressTimer: number | undefined
 const PRESS_FLASH_MS = 180
 
+/**
+ * 击键统计（跟打器口径，适配用户任意输入法）：
+ * 统计真实物理按键（含 IME 组字期间的字母 / 数字选字 / 空格 / 退格）；
+ * 计时起点为首次物理按键（session.startAt，由 startTyping 注入），含首字输入时间。
+ */
+const keyCount = ref(0)
+
 /** 当前方案码表是否已加载（拆字提示就绪） */
 const schemeReady = ref(false)
 
@@ -133,13 +144,42 @@ const EMPTY_RECORD: ModeRecord = {
   accuracy: 1,
   elapsedMs: 0,
   done: 0,
+  keyCount: 0,
   errors: [],
 }
 const shownRecord = computed(() => resultRecord.value ?? EMPTY_RECORD)
 
+/** 结算击键速度（键/分） */
+const shownKeySpeed = computed(() => {
+  const record = shownRecord.value
+  return record.elapsedMs > 0 ? (record.keyCount * 60000) / record.elapsedMs : 0
+})
+
 // ---------- 统计 ----------
-const liveStats = computed(() => typingStats(session.value, now.value))
+/**
+ * 实时统计：完成前按至少 1 秒窗口计算，避免开始瞬间样本过少导致速度虚高；
+ * 完成与结算使用真实用时（引擎口径不变）。
+ */
+const liveStats = computed(() => {
+  const base = typingStats(session.value, now.value)
+  if (session.value.finishedAt !== null) return base
+  const start = session.value.startAt
+  if (start === null) return base
+  const elapsedMs = Math.max(now.value - start, MIN_LIVE_WINDOW_MS)
+  return { ...base, speed: base.done > 0 ? (base.done * 60000) / elapsedMs : 0 }
+})
 const goalChars = computed(() => config.value?.charTarget ?? 0)
+
+/** 实时击键速度（键/分）：物理按键数 ÷ 计时区间（完成前同样按最小窗口） */
+const keySpeed = computed(() => {
+  const start = session.value.startAt
+  if (start === null) return 0
+  const finished = session.value.finishedAt
+  const end = finished ?? now.value
+  const elapsedMs =
+    finished !== null ? end - start : Math.max(end - start, MIN_LIVE_WINDOW_MS)
+  return elapsedMs > 0 ? (keyCount.value * 60000) / elapsedMs : 0
+})
 const displayDone = computed(() => liveStats.value.done)
 const displayTotal = computed(() => {
   if (mode.value === 'sprint' || mode.value === 'endless') {
@@ -160,15 +200,17 @@ function average(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length
 }
 
-/** 合并多段成绩：速度/正确率取简单平均，用时累加 */
+/** 合并多段成绩：速度/正确率取简单平均，用时与击键累加（键速按合计重算） */
 function mergeRecords(records: ModeRecord[]): ModeRecord {
   const elapsedMs = records.reduce((sum, record) => sum + record.elapsedMs, 0)
   const done = records.reduce((sum, record) => sum + record.done, 0)
+  const keyCount = records.reduce((sum, record) => sum + record.keyCount, 0)
   return {
     speed: average(records.map((record) => record.speed)),
     accuracy: average(records.map((record) => record.accuracy)),
     elapsedMs,
     done,
+    keyCount,
     errors: records.flatMap((record) => record.errors),
   }
 }
@@ -181,6 +223,7 @@ function makeRecord(): ModeRecord {
     accuracy: stats.accuracy,
     elapsedMs: stats.elapsedMs,
     done: stats.done,
+    keyCount: keyCount.value,
     errors: session.value.errors.map((error) => ({
       char: session.value.target[error.index] ?? '',
       input: error.input,
@@ -224,6 +267,64 @@ async function loadArraySource(source: TypingSource): Promise<string[]> {
     return words[source]
   }
   return []
+}
+
+/** 按 7:2:1 权重从二/三/四字词中抽取不重复的 count 个词（种子随机，综合抽样用） */
+function sampleMixedWords(words: WordsTable, count: number, rand: () => number): string[] {
+  const pools = [
+    { list: words.words2, weight: 7 },
+    { list: words.words3, weight: 2 },
+    { list: words.words4, weight: 1 },
+  ].filter((pool) => pool.list.length > 0)
+  if (pools.length === 0) return []
+  const totalWeight = pools.reduce((sum, pool) => sum + pool.weight, 0)
+  const picked: string[] = []
+  const seen = new Set<string>()
+  let guard = count * 60
+  while (picked.length < count && guard > 0) {
+    guard -= 1
+    let roll = rand() * totalWeight
+    let pool = pools[pools.length - 1]
+    for (const candidate of pools) {
+      roll -= candidate.weight
+      if (roll <= 0) {
+        pool = candidate
+        break
+      }
+    }
+    const word = pool.list[Math.floor(rand() * pool.list.length)]
+    if (seen.has(word)) continue
+    seen.add(word)
+    picked.push(word)
+  }
+  return picked
+}
+
+/**
+ * 数组源综合目标（普通跟打，全键位综合形式）：
+ * 每次进入从全源池随机抽取 sample 个字/词（不重复）；词组以不换行空格分隔显示。
+ */
+async function buildArrayTarget(
+  cfgValue: TypingConfig,
+): Promise<{ chars: string[]; items: DisplayItem[] | null }> {
+  const count = cfgValue.sample ?? 200
+  if (cfgValue.source === 'words-mix') {
+    const words = await loadWords()
+    const picked = sampleMixedWords(words, count, Math.random)
+    const chars: string[] = []
+    const items: DisplayItem[] = []
+    for (const word of picked) {
+      if (items.length > 0) items.push({ kind: 'punct', char: '\u00a0' })
+      for (const char of word) {
+        items.push({ kind: 'char', char, index: chars.length })
+        chars.push(char)
+      }
+    }
+    return { chars, items }
+  }
+  const pool = await loadArraySource(cfgValue.source)
+  const chars = shuffleWith(pool, Math.random).slice(0, count)
+  return { chars, items: null }
 }
 
 async function loadChosenArticles(ids: string[] | undefined): Promise<Article[]> {
@@ -311,6 +412,7 @@ function startTarget(chars: string[], items: DisplayItem[] | null = null): void 
   resultVisible.value = false
   resultRecord.value = null
   display.value = items
+  keyCount.value = 0
   session.value = createTypingSession(chars)
   sessionToken.value += 1
   now.value = Date.now()
@@ -636,8 +738,8 @@ async function setupSpeedup(cfgValue: TypingConfig): Promise<boolean> {
   return true
 }
 
-// ---------- 耐力（S6） ----------
-const marathonDisplay = ref<{ chars: string[]; items: DisplayItem[] } | null>(null)
+// ---------- 耐力 / 综合跟打（marathon：文章或数组源一次打完） ----------
+const marathonDisplay = ref<{ chars: string[]; items: DisplayItem[] | null } | null>(null)
 
 function finishMarathon(): void {
   const record = makeRecord()
@@ -660,8 +762,15 @@ function finishMarathon(): void {
 }
 
 async function setupMarathon(cfgValue: TypingConfig): Promise<boolean> {
-  const chosen = await loadChosenArticles(cfgValue.articleIds)
-  const built = buildDisplay(chosen.map((article) => article.paragraphs.join('\n')).join('\n'))
+  // 文章源：保留标点排版；数组源（综合关）：每次进入随机抽样 200 字/词，一次打完
+  const built =
+    cfgValue.source === 'article'
+      ? buildDisplay(
+          (await loadChosenArticles(cfgValue.articleIds))
+            .map((article) => article.paragraphs.join('\n'))
+            .join('\n'),
+        )
+      : await buildArrayTarget(cfgValue)
   if (built.chars.length === 0) {
     router.replace('/')
     return false
@@ -862,8 +971,12 @@ function codeToKey(code: string): string {
   return ''
 }
 
-/** 物理按键按下时点亮虚拟键盘对应键帽 */
+/** 物理按键（含 IME 组字期间）：首次按键启动计时，累计击键并点亮虚拟键盘对应键帽 */
 function onKey(code: string): void {
+  if (session.value.startAt === null) {
+    session.value = startTyping(session.value, Date.now())
+  }
+  keyCount.value += 1
   const key = codeToKey(code)
   if (!key) return
   pressedKey.value = key
@@ -1213,6 +1326,7 @@ onUnmounted(() => {
       :done="displayDone"
       :total="displayTotal"
       :elapsed-sec="liveStats.elapsedMs / 1000"
+      :keystrokes="keySpeed"
     />
 
     <p v-if="ready && !resultVisible" class="typing__mode">{{ modeInfo }}</p>
@@ -1333,6 +1447,7 @@ onUnmounted(() => {
       :speed="shownRecord.speed"
       :accuracy="shownRecord.accuracy"
       :elapsed-ms="shownRecord.elapsedMs"
+      :keystrokes="shownKeySpeed"
       :rank="resultRank"
       :passed="resultPassed"
       :pass-label="resultPassLabel"

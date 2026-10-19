@@ -22,12 +22,13 @@ const SCHEMES: WubiScheme[] = ['wubi86', 'wubi98']
 
 const ALL_LEVELS: LevelConfig[] = STAGES.flatMap((stage) => stage.levels)
 const TYPING_LEVELS: LevelConfig[] = ALL_LEVELS.filter((level) => level.type === 'typing')
-/** climb 数据源的规定长度（实际数据由 scripts/verify-data.ts 校验） */
+/** climb 数据源的规定长度（实际数据由 scripts/verify-data.ts 校验；words-mix 为词表合计） */
 const TYPING_SOURCE_LENGTH: Record<string, number> = {
   common3500: 3500,
   words2: 1000,
   words3: 200,
   words4: 200,
+  'words-mix': 1400,
 }
 const CLIMB_LEVELS: LevelConfig[] = TYPING_LEVELS.filter(
   (level) => level.typing?.mode === 'climb',
@@ -72,11 +73,11 @@ describe('关卡配置一致性', () => {
 describe('跟打器关卡配置一致性', () => {
   // 跟打器数据（common3500/words/articles）与输入方案无关，但沿用项目惯例两套方案各校验一遍
   for (const scheme of SCHEMES) {
-    it(`6 阶段 39 关且 id 全局唯一 [${scheme}]`, () => {
-      expect(STAGES.map((stage) => stage.levels.length)).toEqual([7, 10, 7, 5, 4, 6])
-      expect(ALL_LEVELS).toHaveLength(39)
-      expect(new Set(ALL_LEVELS.map((level) => level.id)).size).toBe(39)
-      expect(TYPING_LEVELS).toHaveLength(15)
+    it(`6 阶段 41 关且 id 全局唯一 [${scheme}]`, () => {
+      expect(STAGES.map((stage) => stage.levels.length)).toEqual([7, 10, 7, 6, 5, 6])
+      expect(ALL_LEVELS).toHaveLength(41)
+      expect(new Set(ALL_LEVELS.map((level) => level.id)).size).toBe(41)
+      expect(TYPING_LEVELS).toHaveLength(17)
     })
 
     it(`typing 关必填 mode/source [${scheme}]`, () => {
@@ -116,6 +117,24 @@ describe('跟打器关卡配置一致性', () => {
         expect(start, `${level.id} range.start`).toBeGreaterThanOrEqual(0)
         expect(start, `${level.id} range.start < end`).toBeLessThan(end)
         expect(end, `${level.id} range.end 超出数据源`).toBeLessThanOrEqual(sourceLength)
+      }
+    })
+
+    it(`综合抽样关（marathon 数组源）字段齐全 [${scheme}]`, () => {
+      const sampled = TYPING_LEVELS.filter((level) => level.typing?.sample !== undefined)
+      expect(sampled.map((level) => level.id).sort()).toEqual(['s4-common-mix', 's5-words-mix'])
+      for (const level of sampled) {
+        const cfg = level.typing
+        if (!cfg) throw new Error(`${level.id} 缺少 typing 配置`)
+        expect(cfg.mode, level.id).toBe('marathon')
+        expect(cfg.range, `${level.id} 抽样关不应有 range`).toBeUndefined()
+        const sourceLength = TYPING_SOURCE_LENGTH[cfg.source]
+        if (sourceLength === undefined) throw new Error(`${level.id} 数据源无长度定义`)
+        expect(Number.isInteger(cfg.sample), `${level.id} sample 应为整数`).toBe(true)
+        expect(cfg.sample ?? 0, `${level.id} sample`).toBeGreaterThan(0)
+        expect(cfg.sample ?? 0, `${level.id} sample 超出数据源`).toBeLessThanOrEqual(sourceLength)
+        expect(level.require.speed, `${level.id} require.speed`).toBeGreaterThan(0)
+        expect(level.require.accuracy, `${level.id} require.accuracy`).toBeGreaterThan(0)
       }
     })
 

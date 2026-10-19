@@ -142,6 +142,11 @@ describe('PlayView 退格', () => {
     await typeKeys(code)
     await waitUntil(() => wrapper.find('.tp-char--done-clean').exists())
     expect(wrapper.find('.tp-char--done-clean').exists()).toBe(true)
+
+    // 击键统计（键/分）在统计条展示：编码击键含错误键与退格
+    const statsText = wrapper.find('.stats').text()
+    expect(statsText).toContain('击键')
+    expect(statsText).toContain('键/分')
   })
 })
 

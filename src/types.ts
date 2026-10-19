@@ -91,6 +91,8 @@ export interface TypingConfig {
   articleIds?: string[]
   /** 数组源：切片范围 [start, end)（缺省为全量） */
   range?: [number, number]
+  /** 数组源综合抽样题量（marathon 综合关：每次进入随机覆盖全源池抽取，与 range 互斥） */
+  sample?: number
   /** climb：每组字数（默认 10） */
   groupSize?: number
   /** climb：组达标速度（字/分，默认 60） */

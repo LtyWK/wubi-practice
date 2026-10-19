@@ -14,6 +14,8 @@ const props = defineProps<{
   timeouts?: number
   /** 速度单位 */
   unit?: string
+  /** 击键速度（键/分，物理按键口径），传值时展示 */
+  keystrokes?: number
 }>()
 
 function pct(n: number): string {
@@ -40,6 +42,11 @@ function pct(n: number): string {
       <span class="stats__label">用时</span>
       <span class="stats__value">{{ props.elapsedSec.toFixed(0) }}</span>
       <span class="stats__unit">秒</span>
+    </div>
+    <div v-if="props.keystrokes !== undefined" class="stats__item">
+      <span class="stats__label">击键</span>
+      <span class="stats__value">{{ props.keystrokes.toFixed(0) }}</span>
+      <span class="stats__unit">键/分</span>
     </div>
     <div v-if="props.timeouts !== undefined" class="stats__item">
       <span class="stats__label">超时</span>

@@ -72,9 +72,10 @@ function intro(id: string, title: string, paragraphs: string[]): LevelConfig {
   }
 }
 
-/** 跟打器关卡的总量（展示用）：climb 取切片跨度，gauntlet 累加各段，其余按目标/预生成量 */
+/** 跟打器关卡的总量（展示用）：climb 取抽样量或切片跨度，gauntlet 累加各段，其余按目标/预生成量 */
 function typingLength(cfg: TypingConfig): number {
   if (cfg.mode === 'climb') {
+    if (cfg.sample !== undefined) return cfg.sample
     // words3 / words4 不传 range，全量各 200；common3500 与 words2 按切片跨度
     return cfg.range ? cfg.range[1] - cfg.range[0] : 200
   }
@@ -84,7 +85,8 @@ function typingLength(cfg: TypingConfig): number {
       return sum + (seg.count ?? span)
     }, 0)
   }
-  return cfg.charTarget ?? cfg.poolSize ?? 0
+  // marathon 数组源（综合关）用抽样题量；其余按目标字数或预生成量
+  return cfg.sample ?? cfg.charTarget ?? cfg.poolSize ?? 0
 }
 
 /**
@@ -118,7 +120,7 @@ const ZHE = ['n', 'b', 'v', 'c', 'x']
 const ALL_KEYS = [...HENG, ...SHU, ...PIE, ...NA, ...ZHE]
 
 /**
- * V3 关卡体系：6 阶段 / 39 小关。
+ * V3 关卡体系：6 阶段 / 41 小关。
  *
  * 训练量设计依据（单次练习约 3–6 分钟，达到有效肌肉记忆时长）：
  * - 字根关：单区 200 题（每键约 40 次）；全键位综合 300 题（每键约 12 次）
@@ -128,7 +130,8 @@ const ALL_KEYS = [...HENG, ...SHU, ...PIE, ...NA, ...ZHE]
  * - 二级简码五区关：题量 = 池大小（各取 86/98 较大值），一轮即可覆盖整个池
  * - S2 通关速度门槛整体控制在 20–30 字/分（新手友好，随关卡推进递增）
  * - S3 识别码关：全码基础各 100 题；识别码分型按 86/98 池较大值定题量（250/210/170），随机取样即可
- * - S4/S5 爬坡关：10 字（词）一组、组达标 60 字/分，逐组推进并保存进度
+ * - S4/S5 爬坡关：10 字（词）一组、组达标速度档 35/50/70（默认 50），逐组推进并保存进度
+ * - S4/S5 综合关（s4-common-mix / s5-words-mix）：全键位综合形式（普通跟打）——每次进入随机覆盖全源池抽取 200 题，一次打完结算
  * - S6 挑战关：限时冲刺 / 逐段提速 / 耐力 / 无尽 / 公文 / 混合段落
  * - 教学关（intro）：纯阅读，阅读完毕即达标
  *
@@ -310,7 +313,7 @@ export const STAGES: StageConfig[] = [
   {
     id: 's4',
     title: '常用字爬坡',
-    description: '3500 常用字，十连一组，每组 60 字/分过关',
+    description: '3500 常用字十连一组，速度档 35/50/70 可选，达标自动进组',
     levels: [
       typing(
         's4-common-1',
@@ -365,12 +368,20 @@ export const STAGES: StageConfig[] = [
         60,
         0,
       ),
+      // 综合关：全键位综合形式（普通跟打）——每次进入从 3500 常用字全池随机抽取 200 字，一次打完按速度与正确率结算
+      typing(
+        's4-common-mix',
+        '常用字综合 200',
+        { mode: 'marathon', source: 'common3500', sample: 200 },
+        50,
+        0.9,
+      ),
     ],
   },
   {
     id: 's5',
     title: '词组爬坡',
-    description: '常用词组十连一组，速度与手感双修',
+    description: '常用二/三/四字词十连一组，速度档 35/50/70 可选',
     levels: [
       typing(
         's5-words2-a',
@@ -399,6 +410,14 @@ export const STAGES: StageConfig[] = [
         { mode: 'climb', source: 'words4', groupSize: 10, groupSpeed: 50 },
         60,
         0,
+      ),
+      // 综合关：全键位综合形式（普通跟打）——按 7:2:1 从二/三/四字词随机抽取 200 词，一次打完按速度与正确率结算
+      typing(
+        's5-words-mix',
+        '常用词综合 200',
+        { mode: 'marathon', source: 'words-mix', sample: 200 },
+        50,
+        0.9,
       ),
     ],
   },

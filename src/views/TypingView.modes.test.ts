@@ -167,6 +167,49 @@ describe('TypingView 挑战模式（S6）', () => {
     expect(getLevelResult('s6-sprint-poem')?.passed).toBe(false)
   }, 20000)
 
+  it('常用字综合 200：全池随机抽样、一次打完按速度与正确率达标', async () => {
+    routeRef.params.id = 's4-common-mix'
+    unlockStage('s4')
+    const view = mount(TypingView)
+    wrapper = view
+    await waitFor(() => view.findAll('.tv-char').length === 200, '综合目标加载')
+
+    const chars = targetChars(view)
+    expect(chars).toHaveLength(200)
+    expect(new Set(chars).size).toBe(200) // 随机抽样不重复
+
+    feed(view, chars[0])
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(1000)
+    feed(view, chars.slice(1).join(''))
+    await nextTick()
+
+    expect(view.find('.result').exists()).toBe(true)
+    expect(view.find('.result__pass--ok').exists()).toBe(true)
+    expect(getLevelResult('s4-common-mix')?.passed).toBe(true)
+  }, 20000)
+
+  it('常用词综合 200：词间分隔显示、随机抽取 200 词、一次打完结算', async () => {
+    routeRef.params.id = 's5-words-mix'
+    unlockStage('s5')
+    const view = mount(TypingView)
+    wrapper = view
+    await waitFor(() => view.findAll('.tv-char').length > 200, '词组目标加载')
+
+    const chars = targetChars(view)
+    expect(chars.length).toBeGreaterThan(200) // 200 个词的合计字数多于 200
+    expect(view.findAll('.tv-punct')).toHaveLength(199) // 200 个词之间的分隔
+
+    feed(view, chars[0])
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(2000)
+    feed(view, chars.slice(1).join(''))
+    await nextTick()
+
+    expect(view.find('.result').exists()).toBe(true)
+    expect(getLevelResult('s5-words-mix')?.passed).toBe(true)
+  }, 20000)
+
   it('自由模式：完成后显示结算面板且不展示达标徽章', async () => {
     routeRef.params.id = 'free'
     setFreeText('自由测试', '跟打器自由练习测试')

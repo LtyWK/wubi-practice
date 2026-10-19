@@ -7,7 +7,7 @@ const props = withDefaults(
   defineProps<{
     visible: boolean
     title: string
-    stats: { speed: number; accuracy: number; elapsedSec: number }
+    stats: { speed: number; accuracy: number; elapsedSec: number; keystrokes?: number }
     passed: boolean
     requirement: { speed: number; accuracy: number }
     options: MistakeOption[]
@@ -57,6 +57,10 @@ function onPractice(): void {
         <div><dt>速度</dt><dd>{{ stats.speed.toFixed(0) }} 字/分</dd></div>
         <div><dt>正确率</dt><dd>{{ pct(stats.accuracy) }}</dd></div>
         <div><dt>用时</dt><dd>{{ stats.elapsedSec.toFixed(1) }} 秒</dd></div>
+        <div v-if="stats.keystrokes !== undefined">
+          <dt>击键</dt>
+          <dd>{{ stats.keystrokes.toFixed(0) }} 键/分</dd>
+        </div>
       </dl>
       <p v-if="props.showPass" class="modal__req">
         达标要求：≥ {{ requirement.speed }} 字/分 · ≥ {{ pct(requirement.accuracy) }}

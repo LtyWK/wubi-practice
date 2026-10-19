@@ -70,6 +70,15 @@ function feed(view: VueWrapper, text: string): void {
   vm.feed(text)
 }
 
+/** 读取统计条某一项的数值 */
+function statValue(view: VueWrapper, label: string): number {
+  const item = view
+    .findAll('.stats__item')
+    .find((node) => node.find('.stats__label').text() === label)
+  if (!item) throw new Error(`未找到统计项：${label}`)
+  return Number(item.find('.stats__value').text())
+}
+
 describe('TypingView 显示与输入体验', () => {
   it('自由模式：保留标点与换行排版，标点不参与跟打', async () => {
     routeRef.params.id = 'free'
@@ -152,7 +161,7 @@ describe('TypingView 显示与输入体验', () => {
     expect(view.find('.typing__flow--center').exists()).toBe(false)
   }, 20000)
 
-  it('虚拟键盘：物理按键按下时对应键帽高亮，随后自动熄灭', async () => {
+  it('虚拟键盘：物理按键点亮键帽、计入击键统计并自动熄灭', async () => {
     const view = mount(TypingView)
     wrapper = view
     await waitFor(() => view.findAll('.tv-char').length === 10, '第一组目标加载')
@@ -165,6 +174,18 @@ describe('TypingView 显示与输入体验', () => {
     const pressed = view.find('.vk__key--press')
     expect(pressed.exists()).toBe(true)
     expect(pressed.text()).toContain('A')
+
+    // 击键（键/分）实时展示：物理按键从首次按下开始统计（适配任意输入法）
+    const first = view.findAll('.tv-char')[0].text()
+    feed(view, first)
+    await vi.advanceTimersByTimeAsync(1000)
+    await nextTick()
+    const statsText = view.find('.stats').text()
+    expect(statsText).toContain('击键')
+    expect(statsText).toContain('键/分')
+    // 起点为首键且按最小 1 秒窗口计算：不会出现首键瞬间的虚高数值
+    expect(statValue(view, '击键')).toBe(60) // 1 键 ÷ 1 秒
+    expect(statValue(view, '速度')).toBe(60) // 1 字 ÷ 1 秒
 
     await vi.advanceTimersByTimeAsync(300)
     await nextTick()

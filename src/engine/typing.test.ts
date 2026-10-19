@@ -4,6 +4,7 @@ import {
   feedBackspace,
   feedChar,
   feedText,
+  startTyping,
   typingStats,
   type TypingEvent,
   type TypingSession,
@@ -250,6 +251,38 @@ describe('typingStats', () => {
     expect(st.finished).toBe(true)
     expect(st.speed).toBe(0)
     expect(st.accuracy).toBe(1)
+  })
+})
+
+describe('startTyping（跟打器：首次物理按键启动计时）', () => {
+  it('设置 startAt，使首字输入时间计入用时（不再「首字免费」）', () => {
+    const s0 = createTypingSession(['你', '好'])
+    // 首次按键在 t=1000，首字提交在 t=2000：用时含首字输入的 1 秒
+    const started = startTyping(s0, 1000)
+    expect(started.startAt).toBe(1000)
+
+    const first = feedChar(started, '你', 2000)
+    expect(first.session.startAt).toBe(1000) // 提交不覆盖按键起点
+
+    const st = typingStats(first.session, 2000)
+    expect(st.elapsedMs).toBe(1000)
+    expect(st.speed).toBe(60) // 1 字 / 1 秒
+
+    const second = feedChar(first.session, '好', 3000)
+    const done = typingStats(second.session, 3000)
+    expect(done.elapsedMs).toBe(2000)
+    expect(done.speed).toBe(60) // 2 字 / 2 秒，速度不再虚高
+  })
+
+  it('已开始计时的会话保持原 startAt', () => {
+    const s0 = createTypingSession(['你'])
+    const started = startTyping(s0, 1000)
+    expect(startTyping(started, 5000)).toBe(started)
+
+    // 未调用 startTyping 时，兜底以首次提交时间开始
+    const s1 = createTypingSession(['你'])
+    const submitted = feedChar(s1, '你', 700)
+    expect(submitted.session.startAt).toBe(700)
   })
 })
 

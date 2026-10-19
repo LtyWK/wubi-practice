@@ -20,6 +20,8 @@ const props = withDefaults(
     accuracy: number
     /** 用时（毫秒） */
     elapsedMs: number
+    /** 击键速度（键/分，物理按键口径），传值时展示 */
+    keystrokes?: number
     /** 段位 */
     rank?: ResultRank
     /** 达标状态（未传则不显示达标徽章） */
@@ -34,6 +36,7 @@ const props = withDefaults(
     show?: boolean
   }>(),
   {
+    keystrokes: undefined,
     rank: undefined,
     passed: undefined,
     passLabel: undefined,
@@ -50,11 +53,15 @@ const emit = defineEmits<{
 }>()
 
 const metrics = computed<Metric[]>(() => {
-  return [
+  const list: Metric[] = [
     { label: '速度', value: props.speed.toFixed(0), unit: '字/分' },
     { label: '正确率', value: `${Math.round(props.accuracy * 100)}%` },
     { label: '用时', value: (props.elapsedMs / 1000).toFixed(1), unit: '秒' },
   ]
+  if (props.keystrokes !== undefined) {
+    list.push({ label: '击键', value: props.keystrokes.toFixed(0), unit: '键/分' })
+  }
+  return list
 })
 
 const rankClass = computed(() => (props.rank ? `result__rank--${props.rank.toLowerCase()}` : ''))
