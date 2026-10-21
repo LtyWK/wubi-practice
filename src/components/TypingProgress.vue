@@ -36,12 +36,19 @@ function isPassed(index: number): boolean {
   return index < props.done && !isCurrent(index)
 }
 
+/** 前线组：下一个待通关的组（回打旧组时仍可点击返回） */
+function isFrontier(index: number): boolean {
+  return index === props.done && index < props.total
+}
+
 function canSelect(index: number): boolean {
-  return props.clickable && (index < props.done || isCurrent(index))
+  // 已通关组（复习）+ 前线组（返回当前进度）
+  return props.clickable && (index <= props.done || isCurrent(index))
 }
 
 function cellTitle(index: number): string {
   const base = `第 ${index + 1} 组`
+  if (isFrontier(index) && !isCurrent(index)) return `${base} · 点击返回当前进度`
   const best = props.bests[index]
   if (typeof best === 'number' && Number.isFinite(best)) {
     return `${base} · 最佳 ${best.toFixed(1)} 字/分`
@@ -59,7 +66,9 @@ function onSelect(index: number): void {
   <div class="tp">
     <div class="tp__head">
       <span class="tp__summary">进度 {{ props.done }}/{{ props.total }} 组</span>
-      <span v-if="props.clickable" class="tp__hint">点击已通关组可重打</span>
+      <span v-if="props.clickable" class="tp__hint">
+        点击已通关组可重打，点击当前进度组可返回
+      </span>
     </div>
 
     <div class="tp__grid">
@@ -71,7 +80,8 @@ function onSelect(index: number): void {
         :class="{
           'tp__cell--passed': isPassed(index),
           'tp__cell--current': isCurrent(index),
-          'tp__cell--locked': index >= props.done && !isCurrent(index),
+          'tp__cell--frontier': isFrontier(index) && !isCurrent(index),
+          'tp__cell--locked': index > props.done && !isCurrent(index),
           'tp__cell--clickable': canSelect(index),
         }"
         :title="cellTitle(index)"
@@ -158,6 +168,13 @@ function onSelect(index: number): void {
   border-style: dashed;
   color: var(--color-locked);
   opacity: 0.75;
+}
+
+/* 前线组（回打旧组时）：可点击返回当前进度，保持未通关配色 */
+.tp__cell--frontier {
+  border-color: var(--color-primary);
+  border-style: dashed;
+  color: var(--color-primary);
 }
 
 .tp__cell[aria-disabled='true'] {

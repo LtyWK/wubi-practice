@@ -103,6 +103,16 @@ describe('useSave 跟打器进度', () => {
     expect(getTypingProgress('t1')?.groupIndex).toBe(3)
   })
 
+  it('旧进度缺失/非法 groupIndex 时兜底，不产生 NaN 或回退', () => {
+    // 模拟历史存档中进度对象缺少 groupIndex
+    useSave().save.value.typing = { legacy: { groupBests: [55] } as never }
+    recordTypingGroup('legacy', 2, 66)
+    const progress = getTypingProgress('legacy')
+    expect(progress?.groupIndex).toBe(2)
+    expect(Number.isFinite(progress?.groupIndex)).toBe(true)
+    expect(progress?.groupBests[0]).toBe(55)
+  })
+
   it('同组更优速度覆盖、较差速度不覆盖', () => {
     recordTypingGroup('t1', 1, 60)
     recordTypingGroup('t1', 1, 80)

@@ -522,7 +522,9 @@ function startGroup(index: number): void {
 
 function onSelectGroup(index: number): void {
   if (!isClimb.value) return
-  if (index >= groupIndex.value && index !== currentGroup.value) return
+  // 可进入：已通关组（复习）与前线组（返回当前进度）；更后面的组不可跳过
+  if (index > groupIndex.value) return
+  if (index === currentGroup.value) return
   startGroup(index)
 }
 
@@ -549,13 +551,20 @@ function completeClimbGroup(): void {
   const passed = stats.elapsedMs <= limitMs + 1e-6
 
   if (groupIsReview.value) {
-    // 复习旧组：记录最佳速度（内部取最大值，不倒退进度）
-    recordTypingGroup(levelId.value, index + 1, stats.speed)
+    // 复习旧组：仅更新界面上的组最佳速度，不写存档进度（回打不改变通关状态）；
+    // 完成后连续进入下一组复习，直至到达前线组后恢复正常训练
     rememberGroupBest(index, stats.speed)
-    showBanner(`复习完成 · ${stats.speed.toFixed(0)} 字/分`)
+    const next = index + 1
+    const tail =
+      next >= groupIndex.value
+        ? next >= totalGroups.value
+          ? '本关已全部完成'
+          : `回到当前进度（第 ${next + 1} 组）`
+        : `继续复习第 ${next + 1} 组`
+    showBanner(`复习完成 · ${stats.speed.toFixed(0)} 字/分 · ${tail}`)
     scheduleAdvance(() => {
-      if (groupIndex.value >= totalGroups.value) completeClimbLevel()
-      else startGroup(groupIndex.value)
+      if (next >= totalGroups.value) completeClimbLevel()
+      else startGroup(next)
     })
     return
   }

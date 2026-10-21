@@ -234,11 +234,15 @@ export function useSave(): {
     return save.value.typing?.[id]
   }
 
-  /** 记录某关一组完成后的成绩（groupIndex 为完成后的下一组索引） */
+  /**
+   * 记录某关一组完成后的成绩（groupIndex 为完成后的下一组索引，只增不减）。
+   * 组完成属于低频关键节点，立即落盘，避免防抖窗口内切组/刷新丢失进度。
+   */
   function recordTypingGroup(id: string, groupIndex: number, speed: number): void {
     const typing = save.value.typing ?? {}
     const prev = typing[id] ?? { groupIndex: 0, groupBests: [] }
-    const bests = [...prev.groupBests]
+    const prevIndex = Number.isFinite(prev.groupIndex) ? prev.groupIndex : 0
+    const bests = [...(prev.groupBests ?? [])]
     const target = groupIndex - 1
     if (target >= 0) {
       // 补齐空洞，避免稀疏数组写盘后变成 null
@@ -247,11 +251,12 @@ export function useSave(): {
     }
     typing[id] = {
       ...prev,
-      groupIndex: Math.max(prev.groupIndex, groupIndex),
+      // 进度只增不减：回打已通关组 / 异常存档都不会使进度回退
+      groupIndex: Math.max(prevIndex, groupIndex),
       groupBests: bests,
     }
     save.value.typing = typing
-    touchSave()
+    flushSave()
   }
 
   /** 重新洗牌：清空该关进度并写入新的随机种子 */
@@ -259,7 +264,7 @@ export function useSave(): {
     const typing = save.value.typing ?? {}
     typing[id] = { groupIndex: 0, groupBests: [], shuffleSeed: seed }
     save.value.typing = typing
-    touchSave()
+    flushSave()
   }
 
   function recordEndlessBest(chars: number): void {
