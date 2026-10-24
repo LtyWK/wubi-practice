@@ -286,26 +286,26 @@ export const STAGES: StageConfig[] = [
         '例：「沐」= 氵 + 木（2 个字根）+ 末笔捺(4) + 左右型(1) → 识别码 Y → 全码 ISY。',
         '本阶段先练三字根、四字根全码字，再按左右、上下、杂合三种字型专攻识别码，最后综合训练。',
       ]),
-      danzi('s3-full-3roots', '全码基础·三字根', 'freq1', undefined, 100, 6000, 40, 0.85, {
+      danzi('s3-full-3roots', '全码基础·三字根', 'freq1', undefined, 100, 6000, 25, 0.85, {
         rootCount: 3,
       }),
-      danzi('s3-full-4roots', '全码基础·四字根', 'freq1', undefined, 100, 6000, 40, 0.85, {
+      danzi('s3-full-4roots', '全码基础·四字根', 'freq1', undefined, 100, 6000, 25, 0.85, {
         rootCount: 4,
       }),
       // 识别码分型：题量按 86/98 两方案池较大值设定，随机取样即可
-      danzi('s3-idcode-1', '识别码·左右型', 'idcode', undefined, 250, 6000, 30, 0.85, {
+      danzi('s3-idcode-1', '识别码·左右型', 'idcode', undefined, 250, 6000, 25, 0.85, {
         rootCount: 2,
         shape: [1],
       }),
-      danzi('s3-idcode-2', '识别码·上下型', 'idcode', undefined, 210, 6000, 30, 0.85, {
+      danzi('s3-idcode-2', '识别码·上下型', 'idcode', undefined, 210, 6000, 25, 0.85, {
         rootCount: 2,
         shape: [2],
       }),
-      danzi('s3-idcode-3', '识别码·杂合型', 'idcode', undefined, 170, 6000, 30, 0.85, {
+      danzi('s3-idcode-3', '识别码·杂合型', 'idcode', undefined, 170, 6000, 25, 0.85, {
         rootCount: 2,
         shape: [3],
       }),
-      danzi('s3-idcode-mix', '识别码·综合', 'idcode', undefined, 200, 6000, 35, 0.85, {
+      danzi('s3-idcode-mix', '识别码·综合', 'idcode', undefined, 200, 6000, 25, 0.85, {
         rootCount: 2,
       }),
     ],
