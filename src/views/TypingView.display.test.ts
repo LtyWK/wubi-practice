@@ -175,16 +175,16 @@ describe('TypingView 显示与输入体验', () => {
     expect(pressed.exists()).toBe(true)
     expect(pressed.text()).toContain('A')
 
-    // 击键（键/分）实时展示：物理按键从首次按下开始统计（适配任意输入法）
+    // 击键（键/秒）实时展示：物理按键从首次按下开始统计（适配任意输入法）
     const first = view.findAll('.tv-char')[0].text()
     feed(view, first)
     await vi.advanceTimersByTimeAsync(1000)
     await nextTick()
     const statsText = view.find('.stats').text()
     expect(statsText).toContain('击键')
-    expect(statsText).toContain('键/分')
+    expect(statsText).toContain('键/秒')
     // 起点为首键且按最小 1 秒窗口计算：不会出现首键瞬间的虚高数值
-    expect(statValue(view, '击键')).toBe(60) // 1 键 ÷ 1 秒
+    expect(statValue(view, '击键')).toBe(1) // 1 键 ÷ 1 秒 = 1 键/秒
     expect(statValue(view, '速度')).toBe(60) // 1 字 ÷ 1 秒
 
     await vi.advanceTimersByTimeAsync(300)

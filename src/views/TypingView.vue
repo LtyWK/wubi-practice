@@ -149,10 +149,10 @@ const EMPTY_RECORD: ModeRecord = {
 }
 const shownRecord = computed(() => resultRecord.value ?? EMPTY_RECORD)
 
-/** 结算击键速度（键/分） */
+/** 结算击键速度（键/秒） */
 const shownKeySpeed = computed(() => {
   const record = shownRecord.value
-  return record.elapsedMs > 0 ? (record.keyCount * 60000) / record.elapsedMs : 0
+  return record.elapsedMs > 0 ? (record.keyCount * 1000) / record.elapsedMs : 0
 })
 
 // ---------- 统计 ----------
@@ -170,7 +170,7 @@ const liveStats = computed(() => {
 })
 const goalChars = computed(() => config.value?.charTarget ?? 0)
 
-/** 实时击键速度（键/分）：物理按键数 ÷ 计时区间（完成前同样按最小窗口） */
+/** 实时击键速度（键/秒）：物理按键数 ÷ 计时区间（完成前同样按最小窗口） */
 const keySpeed = computed(() => {
   const start = session.value.startAt
   if (start === null) return 0
@@ -178,7 +178,7 @@ const keySpeed = computed(() => {
   const end = finished ?? now.value
   const elapsedMs =
     finished !== null ? end - start : Math.max(end - start, MIN_LIVE_WINDOW_MS)
-  return elapsedMs > 0 ? (keyCount.value * 60000) / elapsedMs : 0
+  return elapsedMs > 0 ? (keyCount.value * 1000) / elapsedMs : 0
 })
 const displayDone = computed(() => liveStats.value.done)
 const displayTotal = computed(() => {

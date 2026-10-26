@@ -59,7 +59,7 @@ function onPractice(): void {
         <div><dt>用时</dt><dd>{{ stats.elapsedSec.toFixed(1) }} 秒</dd></div>
         <div v-if="stats.keystrokes !== undefined">
           <dt>击键</dt>
-          <dd>{{ stats.keystrokes.toFixed(0) }} 键/分</dd>
+          <dd>{{ stats.keystrokes.toFixed(1) }} 键/秒</dd>
         </div>
       </dl>
       <p v-if="props.showPass" class="modal__req">

@@ -152,9 +152,9 @@ const stats = computed(() => {
   const displaySec = displayMs / 1000
   const speed = displaySec > 0 ? (doneCount.value / displaySec) * 60 : 0
   const accuracy = totalKeys.value === 0 ? 1 : correctKeys.value / totalKeys.value
-  // 击键：物理按键总数（编码击键含错误键与退格，与跟打器口径一致）
+  // 击键（键/秒）：物理按键总数（编码击键含错误键与退格，与跟打器口径一致）
   const keys = totalKeys.value + backspaceCount.value
-  const keystrokes = displaySec > 0 ? (keys / displaySec) * 60 : 0
+  const keystrokes = displaySec > 0 ? keys / displaySec : 0
   return { speed, accuracy, elapsedSec, keystrokes }
 })
 const unit = computed(() => (isZigen.value ? '键/分' : '字/分'))

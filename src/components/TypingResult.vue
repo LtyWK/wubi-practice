@@ -20,7 +20,7 @@ const props = withDefaults(
     accuracy: number
     /** 用时（毫秒） */
     elapsedMs: number
-    /** 击键速度（键/分，物理按键口径），传值时展示 */
+    /** 击键速度（键/秒，物理按键口径），传值时展示 */
     keystrokes?: number
     /** 段位 */
     rank?: ResultRank
@@ -59,7 +59,7 @@ const metrics = computed<Metric[]>(() => {
     { label: '用时', value: (props.elapsedMs / 1000).toFixed(1), unit: '秒' },
   ]
   if (props.keystrokes !== undefined) {
-    list.push({ label: '击键', value: props.keystrokes.toFixed(0), unit: '键/分' })
+    list.push({ label: '击键', value: props.keystrokes.toFixed(1), unit: '键/秒' })
   }
   return list
 })
