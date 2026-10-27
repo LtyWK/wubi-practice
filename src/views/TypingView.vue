@@ -323,7 +323,8 @@ async function buildArrayTarget(
     return { chars, items }
   }
   const pool = await loadArraySource(cfgValue.source)
-  const chars = shuffleWith(pool, Math.random).slice(0, count)
+  const [start, end] = cfgValue.range ?? [0, pool.length]
+  const chars = shuffleWith(pool.slice(start, end), Math.random).slice(0, count)
   return { chars, items: null }
 }
 
@@ -501,9 +502,10 @@ const climbSourceUnit = computed(() =>
   config.value?.source === 'common3500' ? '字' : '词',
 )
 
+/** 每组目标：组内条目每次开始随机排序（重来 / 回打均换序），避免背固定字序；词组保持词内顺序 */
 function groupChars(index: number): string[] {
   const items = climbGroups.value[index] ?? []
-  return items.flatMap((item) => [...item])
+  return shuffle(items).flatMap((item) => [...item])
 }
 
 function rememberGroupBest(index: number, speed: number): void {

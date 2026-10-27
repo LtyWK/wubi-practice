@@ -167,7 +167,7 @@ describe('TypingView 挑战模式（S6）', () => {
     expect(getLevelResult('s6-sprint-poem')?.passed).toBe(false)
   }, 20000)
 
-  it('常用字综合 200：全池随机抽样、一次打完按速度与正确率达标', async () => {
+  it('常用字综合 200·上：最常用频段内随机抽样、一次打完按速度与正确率达标', async () => {
     routeRef.params.id = 's4-common-mix'
     unlockStage('s4')
     const view = mount(TypingView)
@@ -177,6 +177,10 @@ describe('TypingView 挑战模式（S6）', () => {
     const chars = targetChars(view)
     expect(chars).toHaveLength(200)
     expect(new Set(chars).size).toBe(200) // 随机抽样不重复
+    // 仅从最常用 1/3 频段（前 1167 字）抽取
+    const common = await loadCommon3500()
+    const top = new Set(common.slice(0, 1167))
+    expect(chars.every((char) => top.has(char))).toBe(true)
 
     feed(view, chars[0])
     await nextTick()
@@ -187,6 +191,34 @@ describe('TypingView 挑战模式（S6）', () => {
     expect(view.find('.result').exists()).toBe(true)
     expect(view.find('.result__pass--ok').exists()).toBe(true)
     expect(getLevelResult('s4-common-mix')?.passed).toBe(true)
+  }, 20000)
+
+  it('常用字综合 200 上/中/下：按常用程度三段分别抽题', async () => {
+    unlockStage('s4')
+    const common = await loadCommon3500()
+    const segments = [
+      { id: 's4-common-mix', pool: common.slice(0, 1167) },
+      { id: 's4-common-mix-mid', pool: common.slice(1167, 2334) },
+      { id: 's4-common-mix-low', pool: common.slice(2334, 3500) },
+    ]
+    for (const segment of segments) {
+      routeRef.params.id = segment.id
+      const view = mount(TypingView)
+      wrapper = view
+      await waitFor(() => view.findAll('.tv-char').length === 200, `${segment.id} 目标加载`)
+
+      const chars = targetChars(view)
+      const allowed = new Set(segment.pool)
+      expect(chars, segment.id).toHaveLength(200)
+      expect(new Set(chars).size, `${segment.id} 抽样不重复`).toBe(200)
+      expect(
+        chars.every((char) => allowed.has(char)),
+        `${segment.id} 抽到了其他频段的字`,
+      ).toBe(true)
+
+      wrapper?.unmount()
+      wrapper = null
+    }
   }, 20000)
 
   it('常用词综合 200：词间分隔显示、随机抽取 200 词、一次打完结算', async () => {

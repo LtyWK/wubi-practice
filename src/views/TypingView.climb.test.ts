@@ -117,6 +117,35 @@ describe('TypingView 爬坡（S4）', () => {
     expect(view.find('.tp__cell--current').text()).toBe('1')
   })
 
+  it('重来本组时随机改变组内顺序（同组内容不变）', async () => {
+    // 首次洗牌全取 0（组序左移一位），重来洗牌全取近 1（保持组基础顺序），确保结果可确定
+    let calls = 0
+    vi.spyOn(Math, 'random').mockImplementation(() => {
+      calls += 1
+      return calls <= 9 ? 0 : 0.999999
+    })
+
+    const view = mount(TypingView)
+    wrapper = view
+    await waitFor(() => view.findAll('.tv-char').length === 10, '第一组目标加载')
+
+    const before = targetChars(view)
+    feed(view, before.slice(0, 5).join(''))
+    await nextTick()
+    await vi.advanceTimersByTimeAsync(15000) // 超过默认 50 字/分门槛
+    feed(view, before.slice(5).join(''))
+    await nextTick()
+    expect(view.find('.typing__banner').text()).toContain('未达标')
+
+    // 1200ms 后自动重来本组：字集合不变、顺序已随机改变
+    await vi.advanceTimersByTimeAsync(1200)
+    await nextTick()
+    const after = targetChars(view)
+    expect(after).toHaveLength(10)
+    expect([...after].sort()).toEqual([...before].sort())
+    expect(after).not.toEqual(before)
+  })
+
   it('通关速度档位：35/50/70 可选（默认 50），切到 70 档后同样成绩不再达标', async () => {
     const view = mount(TypingView)
     wrapper = view
